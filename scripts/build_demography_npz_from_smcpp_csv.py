@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help=(
             "One population curve to include. "
-            "Example: --curve NCN benchmark/demography/NCN/smcpp/NCN_fine_smcpp.csv median"
+            "Example: --curve NCN <SDS_DEMOGRAPHY_ROOT>/NCN/smcpp/NCN_fine_smcpp.csv median"
         ),
     )
     parser.add_argument(

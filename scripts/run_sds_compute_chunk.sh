@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
+# shellcheck source=common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 activate_sds_env
 

@@ -169,7 +169,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         default=str(DEFAULT_ROOT),
-        help="Benchmark demography root. Defaults to benchmark/demography.",
+        help="Benchmark demography root. Defaults to SDS_DEMOGRAPHY_ROOT.",
     )
     parser.add_argument(
         "--chromosomes",

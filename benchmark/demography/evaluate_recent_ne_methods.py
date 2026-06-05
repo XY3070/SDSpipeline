@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         default=str(DEFAULT_ROOT),
-        help="Benchmark demography root directory. Defaults to benchmark/demography.",
+        help="Benchmark demography root directory. Defaults to SDS_DEMOGRAPHY_ROOT.",
     )
     parser.add_argument(
         "--pops",

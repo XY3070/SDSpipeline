@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         default=str(DEFAULT_ROOT),
-        help="Benchmark demography root directory. Defaults to benchmark/demography.",
+        help="Benchmark demography root directory. Defaults to SDS_DEMOGRAPHY_ROOT.",
     )
     parser.add_argument(
         "--coarse-base",
@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Directory for report outputs. Defaults to benchmark/demography/<POP>/smcpp/recent_sensitivity.",
+        help="Directory for report outputs. Defaults to SDS_DEMOGRAPHY_ROOT/<POP>/smcpp/recent_sensitivity.",
     )
     args = parser.parse_args()
     args.pop = args.pop.upper()

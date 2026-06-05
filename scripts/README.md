@@ -12,3 +12,9 @@ Rules:
 - one-off scripts stay in `SDSworkspace/oneoff/`
 - legacy copies under `../sds/scripts` should be treated as transitional once this repo becomes active
 
+Demography support now also lives here:
+
+- `run_smcpp_benchmark.py`
+- `run_smcpp_benchmark_lsf.sh`
+- `prepare_smcpp_runtime.sh`
+- `run_relate_download_refs.sh`

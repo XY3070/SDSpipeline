@@ -27,7 +27,7 @@ BEGIN {
 # 处理不同 VCF 的染色体命名习惯 (1 vs chr1)
 TARGET_CHR="${REGION%%:*}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
+# shellcheck source=common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 ACTUAL_CHR="$(resolve_vcf_chr "$VCF" "$TARGET_CHR")"
 if [[ -z "$ACTUAL_CHR" ]]; then

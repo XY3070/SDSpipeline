@@ -11,7 +11,7 @@ gawk 'NF > 0 && $1 !~ /^#/ { print $1 }' "$SLIST" > "$CLEAN_SLIST"
 
 TARGET_CHR="${REGION%%:*}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
+# shellcheck source=common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 ACTUAL_CHR="$(resolve_vcf_chr "$VCF" "$TARGET_CHR")"
 if [[ -z "$ACTUAL_CHR" ]]; then

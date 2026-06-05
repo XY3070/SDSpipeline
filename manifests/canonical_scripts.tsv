@@ -23,7 +23,11 @@ scripts/postprocess_sds_results.py	postprocess	active	sds/scripts/postprocess_sd
 scripts/diagnose_sds_scan.py	postprocess	active	sds/scripts/diagnose_sds_scan.py	Diagnostic summary helper
 scripts/report_cmplot_manhattan.R	postprocess	active	sds/scripts/report_cmplot_manhattan.R	CMplot rendering
 scripts/build_demography_npz_from_smcpp_csv.py	demography	active	sds/scripts/build_demography_npz_from_smcpp_csv.py	SMC++ curve to NPZ bridge
+scripts/prepare_smcpp_runtime.sh	demography	active	sds/scripts/prepare_smcpp_runtime.sh	Prepare smc++ rootfs/matplotlib runtime assets
+scripts/run_smcpp_benchmark.py	demography	active	sds/scripts/run_smcpp_benchmark.py	Standalone smc++ benchmark runner
+scripts/run_smcpp_benchmark_lsf.sh	demography	active	sds/scripts/run_smcpp_benchmark_lsf.sh	LSF wrapper for smc++ benchmark runner
 scripts/run_smcpp_recent_resolution_workflow.sh	demography	active	sds/scripts/run_smcpp_recent_resolution_workflow.sh	Recent-Ne workflow entrypoint
+scripts/run_relate_download_refs.sh	demography	active	sds/scripts/run_relate_download_refs.sh	Download and stage Relate GRCh38 reference bundle
 scripts/submit_smcpp_recent_job.sh	demography	active	sds/scripts/submit_smcpp_recent_job.sh	SMC++ LSF submitter
 scripts/submit_gravel_chb_gamma_parallel.py	gamma	active	sds/scripts/submit_gravel_chb_gamma_parallel.py	Chunked gamma generation submitter
 scripts/build_extended_gamma_file.py	gamma	active	sds/scripts/build_extended_gamma_file.py	Gamma assembly helper
@@ -40,4 +44,3 @@ benchmark/demography/relate_coal_to_ne.py	demography	active	benchmark/demography
 benchmark/demography/summarize_recent_ne_checkpoints.py	demography	active	benchmark/demography/summarize_recent_ne_checkpoints.py	Checkpoint summary helper
 benchmark/demography/estimate_singer_prior_ne.py	demography	active	benchmark/demography/estimate_singer_prior_ne.py	SINGER prior helper
 benchmark/demography/Population_History_Models.json	demography	active	benchmark/demography/Population_History_Models.json	Demography registry snapshot
-
