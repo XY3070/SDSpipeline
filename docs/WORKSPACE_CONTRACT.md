@@ -43,6 +43,13 @@ Purpose:
 - `provenance/`: run manifests, dataset manifests, and parameter snapshots
 - `cache/`, `tmp/`, `external/`: large or transient supporting content
 
+## Server-specific rule
+
+- `SDSpipeline/` must not assume one global filesystem layout.
+- Per-server absolute paths belong only in `SDSpipeline/config/paths.env`, which stays untracked.
+- If a server needs a small recovery helper or temporary adapter script, put it under `SDSworkspace/oneoff/`, not `SDSpipeline/`.
+- If a required big file exists on server A but not server B, record the actual path and availability in a provenance manifest instead of patching the reusable scripts.
+
 ## Required provenance rule
 
 Every production or audit run in `SDSworkspace/` must have a matching manifest under `SDSworkspace/provenance/` that records:
@@ -58,4 +65,3 @@ Every production or audit run in `SDSworkspace/` must have a matching manifest u
 - parameters
 
 This is the mechanism that should prevent another `olddefault`-style untraceable artifact.
-

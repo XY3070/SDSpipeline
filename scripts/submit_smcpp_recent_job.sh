@@ -20,8 +20,11 @@ TIMEPOINT_END="$6"
 EM_ITERATIONS="${7:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-LOG_DIR="${SMCPP_LOG_DIR:-$PROJECT_ROOT/benchmark/demography/logs}"
+# shellcheck source=common_env.sh
+source "$SCRIPT_DIR/common_env.sh"
+LOG_DIR="${SMCPP_LOG_DIR:-$SDS_RUNS_ROOT/smcpp/logs}"
+BENCH_ROOT="${SMCPP_BENCH_ROOT:-$SDS_DEMOGRAPHY_ROOT}"
+RUNNER_SCRIPT="$SCRIPT_DIR/run_smcpp_benchmark_lsf.sh"
 QUEUE="${SMCPP_LSF_QUEUE:-normal}"
 SLOTS="${SMCPP_LSF_SLOTS:-1}"
 JOB_NAME="${SMCPP_JOB_NAME:-smcpp_bench_${POP}_${TAG}}"
@@ -30,10 +33,12 @@ ERR_LOG="$LOG_DIR/smcpp_bench_${POP}_${TAG}.%J.err"
 BASE_NAME="${POP}_${TAG}"
 
 mkdir -p "$LOG_DIR"
+[[ -f "$RUNNER_SCRIPT" ]] || { echo "[Error] Missing dependency: $RUNNER_SCRIPT" >&2; exit 1; }
 
 EXTRA_ARGS=(--knots "$KNOTS" --timepoints "$TIMEPOINT_START" "$TIMEPOINT_END")
 CMD=(
     env
+    "BENCH_ROOT=$BENCH_ROOT"
     "SMCPP_BASE=$BASE_NAME"
     "SMCPP_WINDOW_SIZE=$WINDOW_SIZE"
     "SMCPP_EXTRA_ARGS=${EXTRA_ARGS[*]}"
@@ -45,7 +50,7 @@ fi
 
 CMD+=(
     /bin/bash
-    "$SCRIPT_DIR/run_smcpp_benchmark_lsf.sh"
+    "$RUNNER_SCRIPT"
     "$POP"
 )
 

@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
+# shellcheck source=common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 activate_sds_env
 
@@ -61,7 +61,7 @@ write_input_audit_sidecars() {
 # ========= 默认配置 =========
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_INPUT_ROOT"
 VCF_OVERRIDE=""
 SAMPLE_LIST_OVERRIDE=""
 OUT_POP=""
@@ -108,22 +108,14 @@ if [[ -n "$VCF_OVERRIDE" ]]; then
     VCF_FILE="$VCF_OVERRIDE"
 else
     [[ -n "$POP" ]] || { echo "[Error] --pop POP is required when --vcf is not provided" >&2; exit 1; }
-    VCF_FILE="$BASE_DIR/data/vcf/$POP/UKBQC_${POP}_chr${CHR}.vcf.gz"
-    if [[ ! -f "$VCF_FILE" ]]; then
-        ALT_VCF="$BASE_DIR/plink/vcf_output/$POP/UKBQC_${POP}_chr${CHR}.vcf.gz"
-        [[ -f "$ALT_VCF" ]] && VCF_FILE="$ALT_VCF"
-    fi
+    VCF_FILE="$(find_population_vcf "$POP" "$CHR" || true)"
 fi
 
 if [[ -n "$SAMPLE_LIST_OVERRIDE" ]]; then
     SAMPLE_LIST="$SAMPLE_LIST_OVERRIDE"
 else
     [[ -n "$POP" ]] || { echo "[Error] --sample-list PATH is required when --pop is not provided" >&2; exit 1; }
-    SAMPLE_LIST="$BASE_DIR/data/${POP}.txt"
-    if [[ ! -f "$SAMPLE_LIST" ]]; then
-        ALT_SLIST="$BASE_DIR/data/metadata/${POP}.txt"
-        [[ -f "$ALT_SLIST" ]] && SAMPLE_LIST="$ALT_SLIST"
-    fi
+    SAMPLE_LIST="$(find_population_sample_list "$POP" || true)"
 fi
 
 if [ "$TEST_MODE" = true ]; then
@@ -165,7 +157,7 @@ validate_sample_list_against_vcf() {
     fi
 }
 
-echo ">>> SDS env: /data/home/grp-wangyf/intern/miniforge3/envs/sds"
+echo ">>> SDS runtime: $(sds_env_label)"
 echo ">>> Population label: $OUT_POP | Chromosome: $CHR"
 echo ">>> VCF: $VCF_FILE"
 echo ">>> Sample list: $SAMPLE_LIST"

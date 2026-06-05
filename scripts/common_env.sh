@@ -1,9 +1,77 @@
 #!/bin/bash
 set -euo pipefail
 
-SDS_ENV_PREFIX="/data/home/grp-wangyf/intern/miniforge3/envs/sds"
-MINIFORGE_ROOT="/data/home/grp-wangyf/intern/miniforge3"
-MAMBA_BIN="$MINIFORGE_ROOT/bin/mamba"
+COMMON_ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SDS_PIPELINE_BOOTSTRAP_ROOT="$(cd "$COMMON_ENV_DIR/.." && pwd)"
+
+SDS_PIPELINE_ROOT="${SDS_PIPELINE_ROOT:-$SDS_PIPELINE_BOOTSTRAP_ROOT}"
+SDS_LOCAL_CONFIG="${SDS_LOCAL_CONFIG:-$SDS_PIPELINE_ROOT/config/paths.env}"
+if [[ -f "$SDS_LOCAL_CONFIG" ]]; then
+    # shellcheck source=/dev/null
+    source "$SDS_LOCAL_CONFIG"
+fi
+
+SDS_PIPELINE_ROOT="${SDS_PIPELINE_ROOT:-$SDS_PIPELINE_BOOTSTRAP_ROOT}"
+SDSLOG_ROOT="${SDSLOG_ROOT:-$SDS_PIPELINE_ROOT/../SDSlog}"
+SDS_WORKSPACE_ROOT="${SDS_WORKSPACE_ROOT:-$SDS_PIPELINE_ROOT/../SDSworkspace}"
+
+SDS_INPUT_ROOT="${SDS_INPUT_ROOT:-$SDS_WORKSPACE_ROOT/input}"
+SDS_RESULTS_ROOT="${SDS_RESULTS_ROOT:-$SDS_WORKSPACE_ROOT/results}"
+SDS_RUNS_ROOT="${SDS_RUNS_ROOT:-$SDS_WORKSPACE_ROOT/runs}"
+SDS_ONEOFF_ROOT="${SDS_ONEOFF_ROOT:-$SDS_WORKSPACE_ROOT/oneoff}"
+SDS_PROVENANCE_ROOT="${SDS_PROVENANCE_ROOT:-$SDS_WORKSPACE_ROOT/provenance}"
+SDS_CACHE_ROOT="${SDS_CACHE_ROOT:-$SDS_WORKSPACE_ROOT/cache}"
+SDS_TMP_ROOT="${SDS_TMP_ROOT:-$SDS_WORKSPACE_ROOT/tmp}"
+SDS_EXTERNAL_ROOT="${SDS_EXTERNAL_ROOT:-$SDS_WORKSPACE_ROOT/external}"
+
+SDS_VCF_ROOT="${SDS_VCF_ROOT:-$SDS_INPUT_ROOT/raw/vcf}"
+SDS_SAMPLE_LIST_ROOT="${SDS_SAMPLE_LIST_ROOT:-$SDS_INPUT_ROOT/freeze/sample_lists}"
+SDS_FREEZE_ROOT="${SDS_FREEZE_ROOT:-$SDS_INPUT_ROOT/freeze}"
+SDS_REFERENCE_ROOT="${SDS_REFERENCE_ROOT:-$SDS_INPUT_ROOT/reference}"
+
+SDS_PRODUCTION_ROOT="${SDS_PRODUCTION_ROOT:-$SDS_RESULTS_ROOT/production}"
+SDS_AUDIT_ROOT="${SDS_AUDIT_ROOT:-$SDS_RESULTS_ROOT/audit}"
+SDS_SDS_INPUT_ROOT="${SDS_SDS_INPUT_ROOT:-$SDS_PRODUCTION_ROOT/sds_input}"
+SDS_SDS_OUTPUT_ROOT="${SDS_SDS_OUTPUT_ROOT:-$SDS_PRODUCTION_ROOT/sds_output}"
+SDS_DEMOGRAPHY_ROOT="${SDS_DEMOGRAPHY_ROOT:-$SDS_PRODUCTION_ROOT/demography}"
+SDS_GAMMA_ROOT="${SDS_GAMMA_ROOT:-$SDS_PRODUCTION_ROOT/gamma}"
+SDS_RAW_HEADER_INTERSECTION_ROOT="${SDS_RAW_HEADER_INTERSECTION_ROOT:-$SDS_AUDIT_ROOT/raw_header_intersections}"
+
+SDS_MS_ROOT="${SDS_MS_ROOT:-$SDS_EXTERNAL_ROOT/ms}"
+SDS_MS_SCRIPTS_DIR="${SDS_MS_SCRIPTS_DIR:-$SDS_MS_ROOT/scripts}"
+SDS_MS_BINARY="${SDS_MS_BINARY:-$SDS_MS_ROOT/msdir/ms}"
+SDS_BACKWARD_SCRIPT="${SDS_BACKWARD_SCRIPT:-$SDS_MS_SCRIPTS_DIR/backward.py}"
+
+SDS_LEGACY_CODE_ROOT="${SDS_LEGACY_CODE_ROOT:-$SDS_PIPELINE_ROOT/../sds}"
+SDS_LEGACY_BENCHMARK_ROOT="${SDS_LEGACY_BENCHMARK_ROOT:-$SDS_PIPELINE_ROOT/../benchmark}"
+
+SDS_ENV_PREFIX="${SDS_ENV_PREFIX:-${CONDA_PREFIX:-}}"
+if [[ -z "${MINIFORGE_ROOT:-}" && -n "$SDS_ENV_PREFIX" ]]; then
+    MINIFORGE_ROOT="$(cd "$(dirname "$(dirname "$SDS_ENV_PREFIX")")" && pwd 2>/dev/null || true)"
+fi
+MINIFORGE_ROOT="${MINIFORGE_ROOT:-}"
+
+SDS_PYTHON="${SDS_PYTHON:-}"
+if [[ -z "$SDS_PYTHON" && -n "$SDS_ENV_PREFIX" ]]; then
+    SDS_PYTHON="$SDS_ENV_PREFIX/bin/python"
+fi
+if [[ -z "$SDS_PYTHON" ]]; then
+    SDS_PYTHON="$(command -v python3 2>/dev/null || true)"
+fi
+
+MAMBA_BIN="${MAMBA_BIN:-}"
+if [[ -z "$MAMBA_BIN" && -n "$MINIFORGE_ROOT" ]]; then
+    MAMBA_BIN="$MINIFORGE_ROOT/bin/mamba"
+fi
+
+export SDS_PIPELINE_ROOT SDS_LOCAL_CONFIG SDSLOG_ROOT SDS_WORKSPACE_ROOT
+export SDS_INPUT_ROOT SDS_RESULTS_ROOT SDS_RUNS_ROOT SDS_ONEOFF_ROOT SDS_PROVENANCE_ROOT
+export SDS_CACHE_ROOT SDS_TMP_ROOT SDS_EXTERNAL_ROOT SDS_VCF_ROOT SDS_SAMPLE_LIST_ROOT
+export SDS_FREEZE_ROOT SDS_REFERENCE_ROOT SDS_PRODUCTION_ROOT SDS_AUDIT_ROOT
+export SDS_SDS_INPUT_ROOT SDS_SDS_OUTPUT_ROOT SDS_DEMOGRAPHY_ROOT SDS_GAMMA_ROOT
+export SDS_RAW_HEADER_INTERSECTION_ROOT SDS_MS_ROOT SDS_MS_SCRIPTS_DIR SDS_MS_BINARY
+export SDS_BACKWARD_SCRIPT SDS_LEGACY_CODE_ROOT SDS_LEGACY_BENCHMARK_ROOT
+export SDS_ENV_PREFIX MINIFORGE_ROOT SDS_PYTHON MAMBA_BIN
 
 ensure_utf8_locale() {
     if [[ "${LC_ALL:-}" == "C.UTF-8" && ! -d /usr/lib/locale/C.UTF-8 ]]; then
@@ -17,31 +85,35 @@ ensure_utf8_locale() {
 activate_sds_env() {
     ensure_utf8_locale
 
-    if [[ ! -d "$SDS_ENV_PREFIX" ]]; then
-        echo "[Error] SDS env not found: $SDS_ENV_PREFIX" >&2
+    if [[ -n "$SDS_ENV_PREFIX" && -d "$SDS_ENV_PREFIX" ]]; then
+        export PATH="$SDS_ENV_PREFIX/bin${MINIFORGE_ROOT:+:$MINIFORGE_ROOT/bin}:$PATH"
+        hash -r
+        if [[ -z "$SDS_PYTHON" || ! -x "$SDS_PYTHON" ]]; then
+            SDS_PYTHON="$SDS_ENV_PREFIX/bin/python"
+        fi
+    fi
+
+    if [[ -z "$SDS_PYTHON" || ! -x "$SDS_PYTHON" ]]; then
+        echo "[Error] SDS python runtime not found. Set SDS_PYTHON or SDS_ENV_PREFIX in $SDS_LOCAL_CONFIG" >&2
         return 1
     fi
 
-    export PATH="$SDS_ENV_PREFIX/bin:$MINIFORGE_ROOT/bin:$PATH"
-    hash -r
-
-    if [[ ! -x "$SDS_ENV_PREFIX/bin/python" ]]; then
-        echo "[Error] Python not found in SDS env: $SDS_ENV_PREFIX/bin/python" >&2
-        return 1
-    fi
+    export SDS_PYTHON
 }
 
 activate_relate_runtime() {
     activate_sds_env
 
     # Relate binaries require a newer libstdc++ than the system default.
-    export LD_LIBRARY_PATH="$SDS_ENV_PREFIX/lib:$MINIFORGE_ROOT/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    if [[ -n "$SDS_ENV_PREFIX" && -d "$SDS_ENV_PREFIX/lib" ]]; then
+        export LD_LIBRARY_PATH="$SDS_ENV_PREFIX/lib${MINIFORGE_ROOT:+:$MINIFORGE_ROOT/lib}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    fi
 }
 
 mamba_run_in_sds_env() {
     activate_sds_env
 
-    if [[ -x "$MAMBA_BIN" ]]; then
+    if [[ -n "$MAMBA_BIN" && -x "$MAMBA_BIN" && -n "$SDS_ENV_PREFIX" && -d "$SDS_ENV_PREFIX" ]]; then
         "$MAMBA_BIN" run -p "$SDS_ENV_PREFIX" "$@"
         return $?
     fi
@@ -97,36 +169,86 @@ sds_queue_default_numba_threads() {
     printf '%s\n' "$slots"
 }
 
-find_default_g_file() {
-    local base_dir="$1"
-    local pop="${2:-}"
+first_existing_file() {
     local candidate
-    local -a candidates=()
-
-    if [[ -n "$pop" ]]; then
-        candidates+=(
-            "$base_dir/data/g_file.${pop}.txt"
-            "$base_dir/data/processed/sds_input/g_file.${pop}.txt"
-            "$base_dir/data/processed/g_file.${pop}.txt"
-            "/data/home/grp-wangyf/xuyuan/ms/scripts/sds_input.gamma_shapes.${pop}.final"
-        )
-    fi
-
-    candidates+=(
-        "$base_dir/data/g_file.txt"
-        "$base_dir/data/processed/sds_input/g_file.txt"
-        "$base_dir/data/processed/g_file.txt"
-        "/data/home/grp-wangyf/xuyuan/ms/scripts/sds_input.gamma_shapes.final"
-    )
-
-    for candidate in "${candidates[@]}"; do
-        if [[ -f "$candidate" ]]; then
+    for candidate in "$@"; do
+        if [[ -n "$candidate" && -f "$candidate" ]]; then
             printf '%s\n' "$candidate"
             return 0
         fi
     done
-
     return 1
+}
+
+sds_env_label() {
+    if [[ -n "$SDS_ENV_PREFIX" && -d "$SDS_ENV_PREFIX" ]]; then
+        printf '%s\n' "$SDS_ENV_PREFIX"
+        return 0
+    fi
+    printf '%s\n' "$SDS_PYTHON"
+}
+
+find_default_g_file() {
+    local base_dir="$1"
+    local pop="${2:-}"
+    local -a candidates=()
+
+    if [[ -n "$pop" ]]; then
+        candidates+=(
+            "$SDS_GAMMA_ROOT/g_file.${pop}.txt"
+            "$SDS_GAMMA_ROOT/${pop}/g_file.txt"
+            "$SDS_GAMMA_ROOT/sds_input.gamma_shapes.${pop}.final"
+            "$SDS_MS_SCRIPTS_DIR/sds_input.gamma_shapes.${pop}.final"
+            "$SDS_LEGACY_CODE_ROOT/data/g_file.${pop}.txt"
+            "$SDS_LEGACY_CODE_ROOT/data/processed/sds_input/g_file.${pop}.txt"
+            "$SDS_LEGACY_CODE_ROOT/data/processed/g_file.${pop}.txt"
+            "$base_dir/data/g_file.${pop}.txt"
+            "$base_dir/data/processed/sds_input/g_file.${pop}.txt"
+            "$base_dir/data/processed/g_file.${pop}.txt"
+        )
+    fi
+
+    candidates+=(
+        "$SDS_GAMMA_ROOT/g_file.txt"
+        "$SDS_GAMMA_ROOT/default/g_file.txt"
+        "$SDS_GAMMA_ROOT/sds_input.gamma_shapes.final"
+        "$SDS_MS_SCRIPTS_DIR/sds_input.gamma_shapes.final"
+        "$SDS_LEGACY_CODE_ROOT/data/g_file.txt"
+        "$SDS_LEGACY_CODE_ROOT/data/processed/sds_input/g_file.txt"
+        "$SDS_LEGACY_CODE_ROOT/data/processed/g_file.txt"
+        "$base_dir/data/g_file.txt"
+        "$base_dir/data/processed/sds_input/g_file.txt"
+        "$base_dir/data/processed/g_file.txt"
+    )
+
+    first_existing_file "${candidates[@]}"
+}
+
+find_population_vcf() {
+    local pop="$1"
+    local chr="$2"
+    local -a candidates=(
+        "$SDS_VCF_ROOT/$pop/UKBQC_${pop}_chr${chr}.vcf.gz"
+        "$SDS_VCF_ROOT/$pop/UKBQC_${pop}_chr${chr}.phased.vcf.gz"
+        "$SDS_VCF_ROOT/$pop/shapeit5/UKBQC_${pop}_chr${chr}.phased.vcf.gz"
+        "$SDS_LEGACY_CODE_ROOT/data/vcf/$pop/UKBQC_${pop}_chr${chr}.vcf.gz"
+        "$SDS_LEGACY_CODE_ROOT/plink/vcf_output/$pop/UKBQC_${pop}_chr${chr}.vcf.gz"
+        "$pop/UKBQC_${pop}_chr${chr}.vcf.gz"
+    )
+    first_existing_file "${candidates[@]}"
+}
+
+find_population_sample_list() {
+    local pop="$1"
+    local -a candidates=(
+        "$SDS_SAMPLE_LIST_ROOT/${pop}.txt"
+        "$SDS_FREEZE_ROOT/${pop}.txt"
+        "$SDS_FREEZE_ROOT/sample_lists/${pop}.txt"
+        "$SDS_FREEZE_ROOT/cohorts/${pop}.txt"
+        "$SDS_LEGACY_CODE_ROOT/data/${pop}.txt"
+        "$SDS_LEGACY_CODE_ROOT/data/metadata/${pop}.txt"
+    )
+    first_existing_file "${candidates[@]}"
 }
 
 resolve_vcf_chr() {

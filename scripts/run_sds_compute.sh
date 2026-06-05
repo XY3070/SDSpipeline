@@ -3,15 +3,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
+# shellcheck source=common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 activate_sds_env
-PYTHON_BIN="$SDS_ENV_PREFIX/bin/python"
+PYTHON_BIN="$SDS_PYTHON"
 
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_output"
-IN_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_OUTPUT_ROOT"
+IN_ROOT="$SDS_SDS_INPUT_ROOT"
 VCF_OVERRIDE=""
 TEST_MODE=false
 FORCE=0
@@ -53,11 +53,7 @@ fi
 if [[ -n "$VCF_OVERRIDE" ]]; then
     VCF_FILE="$VCF_OVERRIDE"
 else
-    VCF_FILE="$BASE_DIR/data/vcf/$POP/UKBQC_${POP}_chr${CHR}.vcf.gz"
-    if [[ ! -f "$VCF_FILE" ]]; then
-        ALT_VCF="$BASE_DIR/plink/vcf_output/$POP/UKBQC_${POP}_chr${CHR}.vcf.gz"
-        [[ -f "$ALT_VCF" ]] && VCF_FILE="$ALT_VCF"
-    fi
+    VCF_FILE="$(find_population_vcf "$POP" "$CHR" || true)"
 fi
 
 if [[ -z "$G_FILE" ]]; then
@@ -196,7 +192,7 @@ if [[ "$FORCE" -eq 0 && -f "$FINAL_OUT" ]]; then
     exit 0
 fi
 
-echo ">>> SDS env: /data/home/grp-wangyf/intern/miniforge3/envs/sds"
+echo ">>> SDS runtime: $(sds_env_label)"
 echo ">>> Compute population: $POP | Chromosome: $CHR"
 echo ">>> Input dir: $INDIR"
 echo ">>> g_file: $G_FILE"

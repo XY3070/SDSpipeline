@@ -8,12 +8,12 @@ activate_sds_env
 
 CHR=""
 RAW_VCF=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_INPUT_ROOT"
 TEST_MODE=0
 FORCE=0
 EMIT_AUDIT_SIDECARS=1
 USE_HEADER_INTERSECTION=0
-INTERSECTION_DIR="$BASE_DIR/data/raw_header_intersections"
+INTERSECTION_DIR="$SDS_RAW_HEADER_INTERSECTION_ROOT/raw_joint"
 
 usage() {
     cat >&2 <<'EOF'
@@ -70,8 +70,8 @@ run_one() {
         --out-pop "$out_pop"
 }
 
-run_one NCN "$BASE_DIR/data/NCN.txt"
-run_one SCN "$BASE_DIR/data/SCN.txt"
-run_one MERGED3971 "$BASE_DIR/data/MERGED3971.txt"
+run_one NCN "$(find_population_sample_list NCN)"
+run_one SCN "$(find_population_sample_list SCN)"
+run_one MERGED3971 "$(find_population_sample_list MERGED3971)"
 
 echo "✓ DONE: raw-joint chr${CHR} inputs for NCN / SCN / MERGED3971"

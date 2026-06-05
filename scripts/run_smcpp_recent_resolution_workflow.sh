@@ -8,8 +8,10 @@ fi
 
 POP="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SDS_PYTHON="${SDS_PYTHON:-/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python}"
+source "$SCRIPT_DIR/common_env.sh"
+activate_sds_env
+BENCH_ROOT="${SMCPP_BENCH_ROOT:-$SDS_DEMOGRAPHY_ROOT}"
+REPORT_ROOT="$BENCH_ROOT/$POP/smcpp/recent_sensitivity"
 
 REFERENCE_BASE="${REFERENCE_BASE:-${POP}_fine}"
 COARSE_BASE="${COARSE_BASE:-$POP}"
@@ -70,16 +72,18 @@ done
 
 REPORT_OUTPUT="$(
     "$SDS_PYTHON" \
-        "$PROJECT_ROOT/benchmark/demography/evaluate_smcpp_recent_resolution.py" \
+        "$SDS_PIPELINE_ROOT/benchmark/demography/evaluate_smcpp_recent_resolution.py" \
         --pop "$POP" \
+        --root "$BENCH_ROOT" \
         --coarse-base "$COARSE_BASE" \
         --reference-base "$REFERENCE_BASE" \
+        --output-dir "$REPORT_ROOT" \
         --candidate-bases "${CANDIDATE_BASES[@]}"
 )"
 printf '%s\n' "$REPORT_OUTPUT"
 
-REPORT_JSON="$PROJECT_ROOT/benchmark/demography/$POP/smcpp/recent_sensitivity/${POP}_recent_resolution_report.json"
-"$SDS_PYTHON" "$PROJECT_ROOT/benchmark/demography/plot_smcpp_recent_sensitivity.py" --report "$REPORT_JSON"
+REPORT_JSON="$REPORT_ROOT/${POP}_recent_resolution_report.json"
+"$SDS_PYTHON" "$SDS_PIPELINE_ROOT/benchmark/demography/plot_smcpp_recent_sensitivity.py" --report "$REPORT_JSON"
 
 if [[ -n "$FOLLOWUP_POP" ]]; then
     SHOULD_SUBMIT="$(

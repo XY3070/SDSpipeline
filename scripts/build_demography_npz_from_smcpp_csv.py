@@ -1,4 +1,4 @@
-#!/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse

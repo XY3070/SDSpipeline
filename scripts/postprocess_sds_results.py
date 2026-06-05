@@ -19,6 +19,11 @@ import pyarrow as pa
 import pyarrow.csv as pacsv
 from scipy.stats import norm
 
+PIPELINE_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_WORKSPACE_ROOT = Path(os.environ.get("SDS_WORKSPACE_ROOT", PIPELINE_ROOT.parent / "SDSworkspace"))
+DEFAULT_SDS_OUTPUT_ROOT = Path(
+    os.environ.get("SDS_SDS_OUTPUT_ROOT", DEFAULT_WORKSPACE_ROOT / "results" / "production" / "sds_output")
+)
 
 RESULT_SCHEMA = pa.schema(
     [
@@ -97,7 +102,7 @@ def parse_args():
     )
     parser.add_argument(
         "--input-dir",
-        default="data/processed/sds_output/NCN",
+        default=str(DEFAULT_SDS_OUTPUT_ROOT / "NCN"),
         help="Directory containing chr*_p.sds.tsv and chr*_q.sds.tsv files.",
     )
     parser.add_argument(

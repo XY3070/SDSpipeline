@@ -10,16 +10,33 @@ import subprocess
 import sys
 from pathlib import Path
 
-SDS_PYTHON = Path("/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python")
-if Path(sys.executable).resolve() != SDS_PYTHON.resolve():
+SDS_PYTHON = Path(os.environ.get("SDS_PYTHON", sys.executable)).expanduser().resolve()
+if Path(sys.executable).resolve() != SDS_PYTHON:
     os.execv(str(SDS_PYTHON), [str(SDS_PYTHON), str(Path(__file__).resolve()), *sys.argv[1:]])
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_WORKSPACE_ROOT = Path(os.environ.get("SDS_WORKSPACE_ROOT", REPO_ROOT.parent / "SDSworkspace")).expanduser().resolve()
+DEFAULT_RESULTS_ROOT = Path(os.environ.get("SDS_RESULTS_ROOT", DEFAULT_WORKSPACE_ROOT / "results")).expanduser().resolve()
+DEFAULT_RUNS_ROOT = Path(os.environ.get("SDS_RUNS_ROOT", DEFAULT_WORKSPACE_ROOT / "runs")).expanduser().resolve()
+DEFAULT_EXTERNAL_ROOT = Path(os.environ.get("SDS_EXTERNAL_ROOT", DEFAULT_WORKSPACE_ROOT / "external")).expanduser().resolve()
+DEFAULT_GAMMA_ROOT = Path(os.environ.get("SDS_GAMMA_ROOT", DEFAULT_RESULTS_ROOT / "production" / "gamma")).expanduser().resolve()
+DEFAULT_DEMOGRAPHY_ROOT = Path(os.environ.get("SDS_DEMOGRAPHY_ROOT", DEFAULT_RESULTS_ROOT / "production" / "demography")).expanduser().resolve()
+DEFAULT_MS_ROOT = Path(os.environ.get("SDS_MS_ROOT", DEFAULT_EXTERNAL_ROOT / "ms")).expanduser().resolve()
 RUN_GAMMA_CHUNK_SCRIPT = REPO_ROOT / "scripts" / "run_single_snp_gamma_chunk.sh"
 AGGREGATE_GAMMA_CHUNKS_SCRIPT = REPO_ROOT / "scripts" / "aggregate_single_snp_gamma_chunks.sh"
-DEFAULT_OUTDIR = REPO_ROOT / "tmp" / "gravel_chb_gamma_ne100k_20260502"
-DEFAULT_DUMMY_NPZ = REPO_ROOT / "tmp" / "region_ne0_positive_20260426" / "scaled_ne0_100000" / "NCN_scaled_ne0_100000.npz"
+DEFAULT_OUTDIR = DEFAULT_GAMMA_ROOT / "gravel_chb_ne100k"
+DEFAULT_DUMMY_NPZ = Path(
+    os.environ.get(
+        "SDS_DUMMY_NPZ",
+        DEFAULT_DEMOGRAPHY_ROOT / "scenarios" / "NCN_scaled_ne0_100000.npz",
+    )
+).expanduser().resolve()
+DEFAULT_MS_MAKE_DIR = Path(os.environ.get("SDS_MS_SCRIPTS_DIR", DEFAULT_MS_ROOT / "scripts")).expanduser().resolve()
+DEFAULT_MS_BINARY = Path(os.environ.get("SDS_MS_BINARY", DEFAULT_MS_ROOT / "msdir" / "ms")).expanduser().resolve()
+DEFAULT_BACKWARD_SCRIPT = Path(
+    os.environ.get("SDS_BACKWARD_SCRIPT", DEFAULT_MS_MAKE_DIR / "backward.py")
+).expanduser().resolve()
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -33,7 +50,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--chunk-array-cap", type=int, default=96, help="Maximum concurrent chunk-gamma array slots.")
     parser.add_argument("--aggregate-array-cap", type=int, default=24, help="Maximum concurrent aggregate array slots.")
     parser.add_argument("--job-prefix", default="gravel_chb_ne100k_gamma", help="LSF job-name prefix.")
-    parser.add_argument("--log-dir", default=str(REPO_ROOT / "logs"), help="Directory for LSF stdout/stderr logs.")
+    parser.add_argument("--log-dir", default=str(DEFAULT_RUNS_ROOT / "gamma" / "logs"), help="Directory for LSF stdout/stderr logs.")
     parser.add_argument("--outdir", default=str(DEFAULT_OUTDIR), help="Output directory for chunk roots, gamma pieces, and manifests.")
     parser.add_argument("--present-ne", type=int, default=100000, help="Present-day diploid population size passed to gamma generation.")
     parser.add_argument("--sample-size", type=int, default=None, help="Optional haplotype sample size override passed into the gamma simulation Makefile.")
@@ -44,9 +61,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--daf-start", type=float, default=0.05, help="Start of the DAF grid.")
     parser.add_argument("--daf-end", type=float, default=0.95, help="End of the DAF grid.")
     parser.add_argument("--daf-step", type=float, default=0.01, help="Step size of the DAF grid.")
-    parser.add_argument("--ms-make-dir", default="/data/home/grp-wangyf/xuyuan/ms/scripts", help="Directory containing the MS Makefile.")
-    parser.add_argument("--ms-binary", default="/data/home/grp-wangyf/xuyuan/ms/msdir/ms", help="Path to the ms binary.")
-    parser.add_argument("--backward-script", default="/data/home/grp-wangyf/xuyuan/ms/scripts/backward.py", help="Path to backward.py.")
+    parser.add_argument("--ms-make-dir", default=str(DEFAULT_MS_MAKE_DIR), help="Directory containing the MS Makefile.")
+    parser.add_argument("--ms-binary", default=str(DEFAULT_MS_BINARY), help="Path to the ms binary.")
+    parser.add_argument("--backward-script", default=str(DEFAULT_BACKWARD_SCRIPT), help="Path to backward.py.")
     parser.add_argument("--no-reuse-existing", action="store_true", help="Force regeneration even when canonical gamma pieces already exist.")
     parser.add_argument("--chunk-worker", action="store_true", help="Generate one gamma chunk and exit.")
     parser.add_argument("--aggregate-worker", action="store_true", help="Aggregate one DAF worth of chunk outputs and exit.")

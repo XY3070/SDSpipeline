@@ -4,17 +4,23 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_ROOT = PROJECT_ROOT / "benchmark" / "demography"
-DEFAULT_RELATE_DIR = PROJECT_ROOT / "relate"
+DEFAULT_WORKSPACE_ROOT = Path(os.environ.get("SDS_WORKSPACE_ROOT", PROJECT_ROOT.parent / "SDSworkspace")).resolve()
+DEFAULT_RESULTS_ROOT = Path(os.environ.get("SDS_RESULTS_ROOT", DEFAULT_WORKSPACE_ROOT / "results")).resolve()
+DEFAULT_EXTERNAL_ROOT = Path(os.environ.get("SDS_EXTERNAL_ROOT", DEFAULT_WORKSPACE_ROOT / "external")).resolve()
+DEFAULT_ROOT = Path(os.environ.get("SDS_DEMOGRAPHY_ROOT", DEFAULT_RESULTS_ROOT / "production" / "demography")).resolve()
+DEFAULT_RELATE_DIR = Path(os.environ.get("SDS_RELATE_DIR", DEFAULT_EXTERNAL_ROOT / "relate")).resolve()
 DEFAULT_SHARED_RELATE_ROOT = DEFAULT_ROOT / "relate_shared"
-DEFAULT_RELATE_DOWNLOAD_SCRIPT = PROJECT_ROOT / "sds" / "scripts" / "run_relate_download_refs.sh"
-DEFAULT_RELATE_PHASED_VCF_ROOT = PROJECT_ROOT / "sds" / "data" / "vcf"
+DEFAULT_RELATE_DOWNLOAD_SCRIPT = PROJECT_ROOT / "scripts" / "run_relate_download_refs.sh"
+DEFAULT_RELATE_PHASED_VCF_ROOT = Path(
+    os.environ.get("SDS_VCF_ROOT", DEFAULT_WORKSPACE_ROOT / "input" / "raw" / "vcf")
+).resolve()
 
 
 def parse_chromosomes(text: str) -> list[int]:
@@ -190,7 +196,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Directory containing phased per-chromosome VCFs named "
-            "UKBQC_<POP>_chr<CHR>.phased.vcf.gz. Defaults to sds/data/vcf/<POP>/shapeit5."
+            "UKBQC_<POP>_chr<CHR>.phased.vcf.gz. Defaults to SDS_VCF_ROOT/<POP>/shapeit5."
         ),
     )
     parser.add_argument(

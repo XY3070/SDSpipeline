@@ -1,7 +1,7 @@
 run_id: SDS-RUN-YYYYMMDD-XXXX
 run_type: production
 pipeline_repo:
-  path: /data/home/grp-wangyf/xuyuan/SDSpipeline
+  path: "<absolute path to SDSpipeline on this server>"
   git_commit: "<fill>"
 entrypoint:
   script: scripts/run_sds_compute.sh
@@ -33,4 +33,3 @@ parameters:
 notes:
   purpose: "<fill>"
   caveats: "<fill>"
-

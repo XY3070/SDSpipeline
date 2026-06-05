@@ -3,15 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/common_env.sh"
 
 POP=""
 CHR=""
 ARRAY_QUEUE="normal"
 SUBMITTER_QUEUE="smp"
 SUBMITTER_SLOTS="4"
-IN_ROOT="$BASE_DIR/data/processed/sds_input_rebuilt_main_contract_20260511"
-OUT_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_newinput_20260511"
-G_FILE="$BASE_DIR/tmp/gravel_chb_gamma_ne100k_20260502/gravel_chb_present100000.g_file.txt"
+IN_ROOT="$SDS_SDS_INPUT_ROOT"
+OUT_ROOT="$SDS_SDS_OUTPUT_ROOT"
+G_FILE=""
 JOB_GROUP="via_smp"
 
 while [[ $# -gt 0 ]]; do
@@ -33,6 +34,11 @@ done
     echo "Usage: $0 --pop POP --chr CHR [--array-queue normal] [--submitter-queue smp]" >&2
     exit 1
 }
+
+if [[ -z "$G_FILE" ]]; then
+    G_FILE="$(find_default_g_file "$BASE_DIR" "$POP" || true)"
+fi
+[[ -n "$G_FILE" && -f "$G_FILE" ]] || { echo "[Error] g_file not found: $G_FILE" >&2; exit 1; }
 
 LOG_DIR="$OUT_ROOT/$POP/logs"
 mkdir -p "$LOG_DIR"

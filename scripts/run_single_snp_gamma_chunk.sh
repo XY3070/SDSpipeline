@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common_env.sh"
+
 usage() {
     echo "Usage: $0 --pop POP --daf DAF --start-rep N --end-rep N --scenario-npz PATH --present-ne INT --workdir PATH [--ms-binary PATH]" >&2
     exit 1
@@ -14,9 +17,9 @@ SCENARIO_NPZ=""
 PRESENT_NE=""
 WORKDIR=""
 TIP_BRANCH_DUMP="0"
-MS_MAKE_DIR="/data/home/grp-wangyf/xuyuan/ms/scripts"
-MS_BINARY="/data/home/grp-wangyf/xuyuan/ms/msdir/ms"
-BACKWARD_SCRIPT="/data/home/grp-wangyf/xuyuan/ms/scripts/backward.py"
+MS_MAKE_DIR="$SDS_MS_SCRIPTS_DIR"
+MS_BINARY="$SDS_MS_BINARY"
+BACKWARD_SCRIPT="$SDS_BACKWARD_SCRIPT"
 SAMPLE_SIZE=""
 
 while [[ $# -gt 0 ]]; do
