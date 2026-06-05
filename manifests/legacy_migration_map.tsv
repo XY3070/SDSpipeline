@@ -1,0 +1,12 @@
+legacy_path	target_component	target_path	migration_mode	notes
+SDSlog	SDSlog	SDSlog	keep	Existing git repo for reporting and writing
+sds/scripts	SDSpipeline	SDSpipeline/scripts	copy_then_promote	Reusable scripts copied first; legacy tree remains transitional
+benchmark/demography	SDSpipeline	SDSpipeline/benchmark/demography	copy_then_promote	Reusable benchmark helpers copied first
+sds/SDS_SCRIPT_PLAN.md	SDSpipeline	SDSpipeline/docs/LEGACY_SDS_SCRIPT_PLAN.md	copy	Design context preserved
+sds/data/vcf	SDSworkspace	SDSworkspace/input/vcf_future	move_later	Current inputs are still in legacy layout
+raw	SDSworkspace	SDSworkspace/input/raw_future	move_later	Large raw callsets should not be in git
+sds/data/processed	SDSworkspace	SDSworkspace/results/legacy	move_later	Historical processed outputs belong in non-git workspace
+queue logs and chunk_submit dirs	SDSworkspace	SDSworkspace/runs	move_later	Run-local roots and logs
+one-off repair/debug scripts	SDSworkspace	SDSworkspace/oneoff	move_or_rewrite	Promote to pipeline only if reused
+gamma/result provenance snapshots	SDSworkspace	SDSworkspace/provenance	move_later	Must record source, params, and outputs
+

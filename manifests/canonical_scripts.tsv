@@ -1,0 +1,43 @@
+script_path	category	status	legacy_source	notes
+scripts/common_env.sh	env	active	sds/scripts/common_env.sh	Shared runtime/path helpers
+scripts/generate_b_file.sh	input	active	sds/scripts/generate_b_file.sh	Current arm boundary builder; needs mask-aware rewrite later
+scripts/generate_s_file.sh	input	active	sds/scripts/generate_s_file.sh	Singleton universe builder
+scripts/generate_t_file.sh	input	active	sds/scripts/generate_t_file.sh	Test SNP table builder
+scripts/generate_o_file.sh	input	active	sds/scripts/generate_o_file.sh	Observability vector builder
+scripts/generate_all_inputs.sh	input	active	sds/scripts/generate_all_inputs.sh	Bulk input generation wrapper
+scripts/build_raw_header_intersection_sample_list.sh	input	active	sds/scripts/build_raw_header_intersection_sample_list.sh	Raw-joint sample intersection helper
+scripts/run_raw_joint_chr_inputs.sh	input	active	sds/scripts/run_raw_joint_chr_inputs.sh	Raw-joint input lineage entrypoint
+scripts/run_sds_input.sh	input	active	sds/scripts/run_sds_input.sh	Main per-pop per-chr input entrypoint
+scripts/filter_t_to_feather.py	compute	active	sds/scripts/filter_t_to_feather.py	Arm/chunk materialization helper
+scripts/split_feather_by_rows.py	compute	active	sds/scripts/split_feather_by_rows.py	Row chunk splitter
+scripts/compute_SDS.py	compute	active	sds/scripts/compute_SDS.py	Core numerical engine
+scripts/run_sds_compute.sh	compute	active	sds/scripts/run_sds_compute.sh	Main per-pop per-chr compute entrypoint
+scripts/run_sds_compute_chunk.sh	compute	active	sds/scripts/run_sds_compute_chunk.sh	Single chunk wrapper
+scripts/run_sds_compute_manifest_entry.sh	compute	active	sds/scripts/run_sds_compute_manifest_entry.sh	Array entry helper
+scripts/merge_sds_chunk_outputs.sh	compute	active	sds/scripts/merge_sds_chunk_outputs.sh	Arm-level chunk merge
+scripts/merge_sds_final_outputs.sh	compute	active	sds/scripts/merge_sds_final_outputs.sh	Chromosome-level final merge
+scripts/archive_sds_output.py	compute	active	sds/scripts/archive_sds_output.py	TSV to parquet/archive helper
+scripts/submit_sds_compute_chunked_chr.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr.sh	Chunked LSF compute submitter
+scripts/submit_sds_compute_chunked_chr_via_smp.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr_via_smp.sh	SMP queue variant
+scripts/postprocess_sds_results.py	postprocess	active	sds/scripts/postprocess_sds_results.py	Normalization and significant-region builder
+scripts/diagnose_sds_scan.py	postprocess	active	sds/scripts/diagnose_sds_scan.py	Diagnostic summary helper
+scripts/report_cmplot_manhattan.R	postprocess	active	sds/scripts/report_cmplot_manhattan.R	CMplot rendering
+scripts/build_demography_npz_from_smcpp_csv.py	demography	active	sds/scripts/build_demography_npz_from_smcpp_csv.py	SMC++ curve to NPZ bridge
+scripts/run_smcpp_recent_resolution_workflow.sh	demography	active	sds/scripts/run_smcpp_recent_resolution_workflow.sh	Recent-Ne workflow entrypoint
+scripts/submit_smcpp_recent_job.sh	demography	active	sds/scripts/submit_smcpp_recent_job.sh	SMC++ LSF submitter
+scripts/submit_gravel_chb_gamma_parallel.py	gamma	active	sds/scripts/submit_gravel_chb_gamma_parallel.py	Chunked gamma generation submitter
+scripts/build_extended_gamma_file.py	gamma	active	sds/scripts/build_extended_gamma_file.py	Gamma assembly helper
+scripts/run_single_snp_gamma_chunk.sh	gamma	active	sds/scripts/run_single_snp_gamma_chunk.sh	Single chunk gamma worker
+scripts/aggregate_single_snp_gamma_chunks.sh	gamma	active	sds/scripts/aggregate_single_snp_gamma_chunks.sh	Gamma chunk aggregation
+benchmark/demography/prepare_recent_ne_inputs.py	demography	active	benchmark/demography/prepare_recent_ne_inputs.py	Demography input materialization
+benchmark/demography/evaluate_recent_ne_methods.py	demography	active	benchmark/demography/evaluate_recent_ne_methods.py	Method compare
+benchmark/demography/evaluate_singer_recent_pilot.py	demography	active	benchmark/demography/evaluate_singer_recent_pilot.py	SINGER pilot evaluator
+benchmark/demography/evaluate_smcpp_recent_resolution.py	demography	active	benchmark/demography/evaluate_smcpp_recent_resolution.py	SMC++ resolution evaluator
+benchmark/demography/plot_population_history_comparison.py	demography	active	benchmark/demography/plot_population_history_comparison.py	Demography comparison plotter
+benchmark/demography/plot_smcpp_recent_sensitivity.py	demography	active	benchmark/demography/plot_smcpp_recent_sensitivity.py	SMC++ sensitivity plotter
+benchmark/demography/plot_smcpp_single_curves.py	demography	active	benchmark/demography/plot_smcpp_single_curves.py	Single-curve plotter
+benchmark/demography/relate_coal_to_ne.py	demography	active	benchmark/demography/relate_coal_to_ne.py	Relate to Ne conversion helper
+benchmark/demography/summarize_recent_ne_checkpoints.py	demography	active	benchmark/demography/summarize_recent_ne_checkpoints.py	Checkpoint summary helper
+benchmark/demography/estimate_singer_prior_ne.py	demography	active	benchmark/demography/estimate_singer_prior_ne.py	SINGER prior helper
+benchmark/demography/Population_History_Models.json	demography	active	benchmark/demography/Population_History_Models.json	Demography registry snapshot
+

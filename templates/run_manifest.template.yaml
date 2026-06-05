@@ -1,0 +1,36 @@
+run_id: SDS-RUN-YYYYMMDD-XXXX
+run_type: production
+pipeline_repo:
+  path: /data/home/grp-wangyf/xuyuan/SDSpipeline
+  git_commit: "<fill>"
+entrypoint:
+  script: scripts/run_sds_compute.sh
+  command: "<fill>"
+cohort:
+  freeze_id: "<fill>"
+  population: NCN
+inputs:
+  vcf: "<absolute path>"
+  sample_list: "<absolute path>"
+  b_file: "<absolute path>"
+  s_file: "<absolute path>"
+  t_file: "<absolute path>"
+  o_file: "<absolute path>"
+masks:
+  analysis_bed: "<absolute path>"
+  blacklist_release: "<fill>"
+demography:
+  model_id: "<fill>"
+  gamma_file: "<absolute path>"
+  gamma_provenance: "<fill>"
+outputs:
+  result_root: "<absolute path>"
+  normalized_tsv: "<absolute path>"
+parameters:
+  test_mode: false
+  chunk_rows: 5000
+  queue: normal
+notes:
+  purpose: "<fill>"
+  caveats: "<fill>"
+

@@ -1,0 +1,20 @@
+dataset_id: SDS-DATASET-YYYYMMDD-XXXX
+dataset_type: analysis_input
+owner_component: SDSworkspace
+source:
+  upstream_callset: "<absolute path>"
+  sample_freeze: "<absolute path>"
+transform:
+  script: "<absolute path>"
+  command: "<fill>"
+filters:
+  region_mask: "<absolute path>"
+  missingness: "<fill>"
+  allele_filter: "<fill>"
+outputs:
+  dataset_root: "<absolute path>"
+  primary_files:
+    - "<absolute path>"
+notes:
+  purpose: "<fill>"
+
