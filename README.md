@@ -39,6 +39,7 @@ This repo is seeded from the current workspace so that future edits can move her
 - Canonical script snapshot: `scripts/`
 - Demography support scripts: `benchmark/demography/`
 - Structure and migration rules: `docs/`, `config/`, `manifests/`, `templates/`
+- SDS input QC contract: `docs/SDS_INPUT_QC_CONTRACT.md`
 
 Edits to reusable pipeline logic should now happen in `SDSpipeline/` first, not under the legacy `sds/` tree.
 

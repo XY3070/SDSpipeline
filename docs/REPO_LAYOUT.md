@@ -14,7 +14,7 @@
 - `manifests/`
   - Human-maintained registries for canonical scripts and migration mapping.
 - `docs/`
-  - Design, structure, and migration rules.
+  - Design, structure, migration rules, and QC contracts.
 
 ## Why `scripts/` is still flat
 
@@ -25,3 +25,8 @@ Until then:
 - category ownership is recorded in `manifests/canonical_scripts.tsv`
 - code edits should happen here, not in the legacy `sds/scripts/`
 
+## QC contracts
+
+`docs/SDS_INPUT_QC_CONTRACT.md` defines the rebuilt SDS input QC contract:
+variant-level gates, singleton-specific filters, mask rules, observability
+requirements, and controlled comparison requirements.

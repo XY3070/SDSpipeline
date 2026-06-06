@@ -52,19 +52,22 @@ def main():
                 }
             )
 
-    table = pa.Table.from_pylist(
-        rows,
-        schema=pa.schema(
-            [
-                ("ID", pa.string()),
-                ("AA", pa.string()),
-                ("DA", pa.string()),
-                ("POS", pa.float64()),
-                ("GENOTYPES", pa.string()),
-            ]
-        ),
-    )
-    feather.write_feather(table, output_path)
+    if rows:
+        table = pa.Table.from_pylist(
+            rows,
+            schema=pa.schema(
+                [
+                    ("ID", pa.string()),
+                    ("AA", pa.string()),
+                    ("DA", pa.string()),
+                    ("POS", pa.float64()),
+                    ("GENOTYPES", pa.string()),
+                ]
+            ),
+        )
+        feather.write_feather(table, output_path)
+    elif output_path.exists():
+        output_path.unlink()
 
     if args.summary_csv:
         summary_path = Path(args.summary_csv)

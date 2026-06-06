@@ -8,6 +8,9 @@ scripts/generate_all_inputs.sh	input	active	sds/scripts/generate_all_inputs.sh	B
 scripts/build_raw_header_intersection_sample_list.sh	input	active	sds/scripts/build_raw_header_intersection_sample_list.sh	Raw-joint sample intersection helper
 scripts/run_raw_joint_chr_inputs.sh	input	active	sds/scripts/run_raw_joint_chr_inputs.sh	Raw-joint input lineage entrypoint
 scripts/run_sds_input.sh	input	active	sds/scripts/run_sds_input.sh	Main per-pop per-chr input entrypoint
+scripts/build_chr_qc_mask.py	input	active	SDSpipeline/scripts/build_chr_qc_mask.py	Build controlled chr-level QC mask BEDs
+scripts/postfilter_sds_input_qc.py	input	active	SDSpipeline/scripts/postfilter_sds_input_qc.py	Apply controlled variant/singleton/observability QC post-filters to SDS input
+scripts/make_sds_target_t_file.py	input	active	SDSpipeline/scripts/make_sds_target_t_file.py	Create targeted SDS input by filtering only t_file to BED intervals
 scripts/filter_t_to_feather.py	compute	active	sds/scripts/filter_t_to_feather.py	Arm/chunk materialization helper
 scripts/split_feather_by_rows.py	compute	active	sds/scripts/split_feather_by_rows.py	Row chunk splitter
 scripts/compute_SDS.py	compute	active	sds/scripts/compute_SDS.py	Core numerical engine
@@ -20,6 +23,7 @@ scripts/archive_sds_output.py	compute	active	sds/scripts/archive_sds_output.py	T
 scripts/submit_sds_compute_chunked_chr.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr.sh	Chunked LSF compute submitter
 scripts/submit_sds_compute_chunked_chr_via_smp.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr_via_smp.sh	SMP queue variant
 scripts/postprocess_sds_results.py	postprocess	active	sds/scripts/postprocess_sds_results.py	Normalization and significant-region builder
+scripts/summarize_chr_sds_windows.py	postprocess	active	SDSpipeline/scripts/summarize_chr_sds_windows.py	Summarize raw SDS output in named BED windows for controlled QC tests
 scripts/diagnose_sds_scan.py	postprocess	active	sds/scripts/diagnose_sds_scan.py	Diagnostic summary helper
 scripts/report_cmplot_manhattan.R	postprocess	active	sds/scripts/report_cmplot_manhattan.R	CMplot rendering
 scripts/build_demography_npz_from_smcpp_csv.py	demography	active	sds/scripts/build_demography_npz_from_smcpp_csv.py	SMC++ curve to NPZ bridge
