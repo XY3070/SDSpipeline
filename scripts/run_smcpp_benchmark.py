@@ -20,7 +20,7 @@ DEFAULT_RESULTS_ROOT = Path(os.environ.get("SDS_RESULTS_ROOT", DEFAULT_WORKSPACE
 DEFAULT_CACHE_ROOT = Path(os.environ.get("SDS_CACHE_ROOT", DEFAULT_WORKSPACE_ROOT / "cache")).resolve()
 DEFAULT_EXTERNAL_ROOT = Path(os.environ.get("SDS_EXTERNAL_ROOT", DEFAULT_WORKSPACE_ROOT / "external")).resolve()
 DEFAULT_BENCH_ROOT = Path(
-    os.environ.get("SDS_DEMOGRAPHY_ROOT", DEFAULT_RESULTS_ROOT / "production" / "demography")
+    os.environ.get("SDS_DEMOGRAPHY_ROOT", PROJECT_ROOT.parent / "benchmark" / "demography")
 ).resolve()
 DEFAULT_VCF_ROOT = Path(
     os.environ.get("SDS_VCF_ROOT", DEFAULT_WORKSPACE_ROOT / "input" / "raw" / "vcf")
@@ -482,6 +482,21 @@ def resolve_plot_csv(plot_path: Path) -> Path:
     )
 
 
+def _write_backward_csv(plot_csv: Path, backward_csv: Path) -> None:
+    """Convert smc++ plot CSV (x,y columns) to backward.py-compatible CSV (generation, mean_Ne)."""
+    import csv
+    rows = []
+    with open(plot_csv) as fh:
+        for row in csv.DictReader(fh):
+            rows.append((float(row["x"]), float(row["y"])))
+    rows.sort(key=lambda r: r[0])
+    with open(backward_csv, "w", newline="") as fh:
+        writer = csv.writer(fh, delimiter="\t")
+        writer.writerow(["generation", "mean_Ne"])
+        for x, y in rows:
+            writer.writerow([x, y])
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the SMC++ side of the NCN/SCN 100-sample demographic benchmark."
@@ -554,20 +569,26 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--mu", type=float, default=DEFAULT_MU, help="Mutation rate per base per generation.")
     parser.add_argument("--cores", type=int, default=4, help="Cores passed to smc++ and bcftools.")
-    parser.add_argument("--window-size", type=int, default=100, help="Window size passed to smc++ estimate.")
+    parser.add_argument("--window-size", type=int, default=20, help="Window size passed to smc++ estimate.")
     parser.add_argument(
         "--knots",
         type=int,
-        default=None,
-        help="Optional smc++ estimate --knots override.",
+        default=8,
+        help="Number of spline knots for smc++ estimate (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--spline",
+        choices=["cubic", "pchip", "piecewise"],
+        default="piecewise",
+        help="Spline type for smc++ estimate (default: %(default)s).",
     )
     parser.add_argument(
         "--timepoints",
         type=float,
         nargs=2,
-        default=None,
+        default=[10.0, 100000.0],
         metavar=("T1", "TK"),
-        help="Optional smc++ estimate --timepoints override in generations.",
+        help="smc++ estimate --timepoints in generations (default: %(default)s).",
     )
     parser.add_argument(
         "--em-iterations",
@@ -737,14 +758,17 @@ def main() -> int:
             args.base,
             "-w",
             str(args.window_size),
+            "--knots",
+            str(args.knots),
+            "--spline",
+            args.spline,
+            "--timepoints",
+            str(args.timepoints[0]),
+            str(args.timepoints[1]),
             ]
         )
         if args.em_iterations is not None:
             cmd.extend(["--em-iterations", str(args.em_iterations)])
-        if args.knots is not None:
-            cmd.extend(["--knots", str(args.knots)])
-        if args.timepoints is not None:
-            cmd.extend(["--timepoints", str(args.timepoints[0]), str(args.timepoints[1])])
         if args.nonseg_cutoff is not None:
             cmd.extend(["--nonseg-cutoff", str(args.nonseg_cutoff)])
         cmd.extend([str(args.mu), *smc_files])
@@ -756,12 +780,18 @@ def main() -> int:
             [
             "plot",
             "--csv",
+            "--step-function",
             str(plot_path),
             str(model_json),
             ]
         )
         run_checked(cmd, extra_env=runner.env_overrides)
     plot_csv = resolve_plot_csv(plot_path)
+
+    # Generate backward.py-compatible CSV from plot CSV
+    backward_csv = output_dir / f"{args.base}_backward.csv"
+    if args.force or not backward_csv.exists():
+        _write_backward_csv(plot_csv, backward_csv)
 
     manifest = {
         "population": args.pop,
@@ -773,6 +803,7 @@ def main() -> int:
         "cores": args.cores,
         "window_size": args.window_size,
         "knots": args.knots,
+        "spline": args.spline,
         "timepoints": args.timepoints,
         "em_iterations": args.em_iterations,
         "missing_cutoff": args.missing_cutoff,
@@ -785,6 +816,7 @@ def main() -> int:
         "model_json": str(model_json),
         "plot_path": str(plot_path),
         "plot_csv": str(plot_csv),
+        "backward_csv": str(backward_csv),
         "contigs": contig_lengths,
     }
     manifest.update(runner.metadata)
