@@ -780,7 +780,6 @@ def main() -> int:
             [
             "plot",
             "--csv",
-            "--step-function",
             str(plot_path),
             str(model_json),
             ]
