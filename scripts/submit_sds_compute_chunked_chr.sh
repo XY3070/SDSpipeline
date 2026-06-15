@@ -22,6 +22,8 @@ JOB_GROUP="chunked"
 WAIT_FOR_FINAL=0
 SKIP_BOUNDARY_MISSING_FRACTION=""
 BOUNDARY_MISSING_MODE=""
+USE_AUTO_SENSE=0
+USER_SET_QUEUE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -29,7 +31,7 @@ while [[ $# -gt 0 ]]; do
         --chr) CHR="$2"; shift 2 ;;
         --out-root) OUT_ROOT="$2"; shift 2 ;;
         --in-root) IN_ROOT="$2"; shift 2 ;;
-        --queue) QUEUE="$2"; shift 2 ;;
+        --queue) QUEUE="$2"; USER_SET_QUEUE=1; shift 2 ;;
         --chunk-rows) CHUNK_ROWS="$2"; shift 2 ;;
         --array-parallel) ARRAY_PARALLEL="$2"; shift 2 ;;
         --chunk-job-slots) CHUNK_JOB_SLOTS="$2"; shift 2 ;;
@@ -40,6 +42,7 @@ while [[ $# -gt 0 ]]; do
         --boundary-missing-mode) BOUNDARY_MISSING_MODE="$2"; shift 2 ;;
         --job-group) JOB_GROUP="$2"; shift 2 ;;
         --wait) WAIT_FOR_FINAL=1; shift ;;
+        --auto) USE_AUTO_SENSE=1; shift ;;
         *) echo "Unknown parameter: $1" >&2; exit 1 ;;
     esac
 done
@@ -49,7 +52,26 @@ if [[ -z "$POP" || -z "$CHR" ]]; then
     exit 1
 fi
 
-QUEUE="$(sds_effective_queue "$QUEUE")"
+# --- Auto-sense or hardcoded defaults ---
+SENSE_SCORE="" SENSE_FREE_SLOTS="" SENSE_FAIRSHARE=""
+if [[ "$USE_AUTO_SENSE" -eq 1 ]]; then
+    _sense_queue_arg=""
+    [[ "$USER_SET_QUEUE" -eq 1 ]] && _sense_queue_arg="$QUEUE"
+    _sense_output="$(bash "$SCRIPT_DIR/sense_cluster.sh" ${_sense_queue_arg:+--queue "$_sense_queue_arg"} --eval 2>/dev/null)" || true
+    if [[ -n "$_sense_output" ]]; then
+        eval "$_sense_output"
+        if [[ "$USER_SET_QUEUE" -eq 0 && -n "$SENSE_QUEUE" ]]; then
+            QUEUE="$SENSE_QUEUE"
+        fi
+    fi
+    QUEUE="$(sds_effective_queue "$QUEUE")"
+    [[ -z "$CHUNK_ROWS" && -n "${SENSE_CHUNK_ROWS:-}" ]] && CHUNK_ROWS="$SENSE_CHUNK_ROWS"
+    [[ -z "$ARRAY_PARALLEL" && -n "${SENSE_ARRAY_PARALLEL:-}" ]] && ARRAY_PARALLEL="$SENSE_ARRAY_PARALLEL"
+    [[ -z "$CHUNK_JOB_SLOTS" && -n "${SENSE_CHUNK_JOB_SLOTS:-}" ]] && CHUNK_JOB_SLOTS="$SENSE_CHUNK_JOB_SLOTS"
+    echo "[auto-sense] queue=$QUEUE score=${SENSE_SCORE:-?} free_slots=${SENSE_FREE_SLOTS:-?} fairshare=${SENSE_FAIRSHARE:-?}" >&2
+else
+    QUEUE="$(sds_effective_queue "$QUEUE")"
+fi
 if [[ -z "$CHUNK_ROWS" ]]; then
     CHUNK_ROWS="$(sds_queue_default_chunk_rows "$QUEUE")"
 fi
@@ -60,6 +82,9 @@ if [[ -z "$CHUNK_JOB_SLOTS" ]]; then
     CHUNK_JOB_SLOTS="$(sds_queue_default_chunk_job_slots "$QUEUE")"
 fi
 CHUNK_NUMBA_THREADS="$(sds_queue_default_numba_threads "$QUEUE" "$CHUNK_JOB_SLOTS")"
+if [[ "$USE_AUTO_SENSE" -eq 1 ]]; then
+    echo "[auto-sense] chunk_rows=$CHUNK_ROWS array_parallel=$ARRAY_PARALLEL chunk_job_slots=$CHUNK_JOB_SLOTS numba_threads=$CHUNK_NUMBA_THREADS" >&2
+fi
 
 if [[ -z "$G_FILE" ]]; then
     G_FILE="$(find_default_g_file "$BASE_DIR" "$POP" || true)"
@@ -212,4 +237,8 @@ FINAL_TSV	$FINAL_TSV
 FINAL_PARQUET	$FINAL_PARQUET
 SKIP_BOUNDARY_MISSING_FRACTION	$SKIP_BOUNDARY_MISSING_FRACTION
 BOUNDARY_MISSING_MODE	$BOUNDARY_MISSING_MODE
+AUTO_SENSE	$USE_AUTO_SENSE
+AUTO_SCORE	${SENSE_SCORE:-}
+AUTO_FREE_SLOTS	${SENSE_FREE_SLOTS:-}
+AUTO_FAIRSHARE	${SENSE_FAIRSHARE:-}
 EOF

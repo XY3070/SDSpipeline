@@ -20,8 +20,10 @@ scripts/run_sds_compute_manifest_entry.sh	compute	active	sds/scripts/run_sds_com
 scripts/merge_sds_chunk_outputs.sh	compute	active	sds/scripts/merge_sds_chunk_outputs.sh	Arm-level chunk merge
 scripts/merge_sds_final_outputs.sh	compute	active	sds/scripts/merge_sds_final_outputs.sh	Chromosome-level final merge
 scripts/archive_sds_output.py	compute	active	sds/scripts/archive_sds_output.py	TSV to parquet/archive helper
-scripts/submit_sds_compute_chunked_chr.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr.sh	Chunked LSF compute submitter
+scripts/submit_sds_compute_chunked_chr.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr.sh	Chunked LSF compute submitter (supports --auto for cluster-aware scheduling)
 scripts/submit_sds_compute_chunked_chr_via_smp.sh	scheduler	active	sds/scripts/submit_sds_compute_chunked_chr_via_smp.sh	SMP queue variant
+scripts/sense_cluster.sh	scheduler	active	SDSpipeline/scripts/sense_cluster.sh	LSF cluster resource sensing library (sourceable); scores queues by fairshare×free_slots/(1+pending)
+scripts/submit_sds_genomewide.sh	scheduler	active	SDSpipeline/scripts/submit_sds_genomewide.sh	Genome-wide SDS orchestrator with dynamic concurrency across populations×chromosomes
 scripts/postprocess_sds_results.py	postprocess	active	sds/scripts/postprocess_sds_results.py	Normalization and significant-region builder
 scripts/summarize_chr_sds_windows.py	postprocess	active	SDSpipeline/scripts/summarize_chr_sds_windows.py	Summarize raw SDS output in named BED windows for controlled QC tests
 scripts/diagnose_sds_scan.py	postprocess	active	sds/scripts/diagnose_sds_scan.py	Diagnostic summary helper

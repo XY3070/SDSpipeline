@@ -11,6 +11,7 @@ parse_args <- function(args) {
     width = 16,
     height = 7,
     dpi = 400,
+    "point-cex" = 0.28,
     "maf-threshold" = 0.01,
     "plot-p-threshold" = 0.0005
   )
@@ -132,7 +133,7 @@ load_plot_data <- function(normalized_path, maf_threshold, plot_p_threshold) {
   )
 }
 
-plot_cmplot_manhattan <- function(plot_df, threshold, output_prefix, title, width, height, dpi) {
+plot_cmplot_manhattan <- function(plot_df, threshold, output_prefix, title, width, height, dpi, point_cex) {
   ymax <- max(
     ceiling(max(-log10(plot_df$P), na.rm = TRUE) * 1.05),
     ceiling(-log10(threshold) * 1.05),
@@ -140,7 +141,7 @@ plot_cmplot_manhattan <- function(plot_df, threshold, output_prefix, title, widt
   )
 
   colors <- c("#4E79A7", "#9C755F")
-  chr_labels <- sprintf("chr%d", 1:22)
+  chr_labels <- c("chr1", as.character(2:22))
 
   render_once <- function(device_open) {
     device_open()
@@ -151,7 +152,7 @@ plot_cmplot_manhattan <- function(plot_df, threshold, output_prefix, title, widt
       LOG10 = TRUE,
       file.output = FALSE,
       col = colors,
-      cex = 0.28,
+      cex = point_cex,
       pch = 19,
       points.alpha = 80L,
       threshold = threshold,
@@ -207,6 +208,7 @@ main <- function() {
   width <- as.numeric(opts[["width"]])
   height <- as.numeric(opts[["height"]])
   dpi <- as.integer(opts[["dpi"]])
+  point_cex <- as.numeric(opts[["point-cex"]])
   maf_threshold <- as.numeric(opts[["maf-threshold"]])
   plot_p_threshold <- as.numeric(opts[["plot-p-threshold"]])
 
@@ -215,6 +217,9 @@ main <- function() {
   }
   if (is.na(dpi) || dpi <= 0) {
     stop("DPI must be a positive integer.", call. = FALSE)
+  }
+  if (is.na(point_cex) || point_cex <= 0) {
+    stop("point-cex must be a positive number.", call. = FALSE)
   }
   if (is.na(maf_threshold) || maf_threshold <= 0 || maf_threshold >= 0.5) {
     stop("maf-threshold must be between 0 and 0.5.", call. = FALSE)
@@ -260,7 +265,8 @@ main <- function() {
     title = title,
     width = width,
     height = height,
-    dpi = dpi
+    dpi = dpi,
+    point_cex = point_cex
   )
 
   cat(sprintf("input\t%s\n", normalized_path))
