@@ -146,7 +146,7 @@ sds_queue_default_chunk_rows() {
     queue="$(sds_effective_queue "${1:-}")"
     case "$queue" in
         smp) printf '%s\n' 10000 ;;
-        *) printf '%s\n' 5000 ;;
+        *) printf '%s\n' 10000 ;;
     esac
 }
 

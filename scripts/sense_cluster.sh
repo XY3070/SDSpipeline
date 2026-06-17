@@ -181,7 +181,7 @@ sense_derive_sds_params() {
     else
         chunk_job_slots=1
         array_parallel=$(( free_slots * 3 / 4 ))
-        chunk_rows=5000
+        chunk_rows=10000
         numba_threads=1
     fi
 

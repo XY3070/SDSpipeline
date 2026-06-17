@@ -25,6 +25,8 @@ RANGE_PART="${REGION#*:}"
 CLEAN_REG="${ACTUAL_CHR}:${RANGE_PART}"
 
 bcftools view -r "$CLEAN_REG" -S "$CLEAN_SLIST" -f PASS -m2 -M2 -v snps --force-samples -Ou "$VCF" | \
+bcftools +fill-tags -Ou -- -t AF | \
+bcftools view -i 'AF>=0.05 && AF<=0.95' -Ou | \
 bcftools query -f '%ID\t%REF\t%ALT\t%POS[\t%GT]\n' | \
 gawk -v OFS="\t" '
 {
