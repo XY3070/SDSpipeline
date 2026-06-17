@@ -205,6 +205,10 @@ find_default_g_file() {
     local pop="${2:-}"
     local -a candidates=()
 
+    candidates+=(
+        "$SDS_GAMMA_ROOT/g_file.Gravel_EAS.txt"
+    )
+
     if [[ -n "$pop" ]]; then
         candidates+=(
             "$SDS_GAMMA_ROOT/g_file.${pop}.txt"

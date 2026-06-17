@@ -9,11 +9,6 @@ from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
-import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pyarrow as pa
 import pyarrow.csv as pacsv
@@ -24,6 +19,10 @@ DEFAULT_WORKSPACE_ROOT = Path(os.environ.get("SDS_WORKSPACE_ROOT", PIPELINE_ROOT
 DEFAULT_SDS_OUTPUT_ROOT = Path(
     os.environ.get("SDS_SDS_OUTPUT_ROOT", DEFAULT_WORKSPACE_ROOT / "results" / "production" / "sds_output")
 )
+
+SPLIT_BIN_LOW_WIDTH = 0.05
+SPLIT_BIN_HIGH_WIDTH = 0.1
+SPLIT_BIN_TRANSITION = 0.1
 
 RESULT_SCHEMA = pa.schema(
     [
@@ -122,34 +121,10 @@ def parse_args():
         help="Minor-allele-frequency threshold used to define common variants.",
     )
     parser.add_argument(
-        "--maf-bin-width",
-        type=float,
-        default=0.01,
-        help="Minor-allele-frequency bin width used for normalization.",
-    )
-    parser.add_argument(
         "--region-gap",
         type=int,
         default=200_000,
         help="Maximum gap in base pairs to merge consecutive significant SNPs into one region.",
-    )
-    parser.add_argument(
-        "--plot-width",
-        type=int,
-        default=2400,
-        help="Manhattan plot width in pixels.",
-    )
-    parser.add_argument(
-        "--plot-height",
-        type=int,
-        default=900,
-        help="Manhattan plot height in pixels.",
-    )
-    parser.add_argument(
-        "--plot-chunk-size",
-        type=int,
-        default=250_000,
-        help="Number of plot points to load into matplotlib at once.",
     )
     parser.add_argument(
         "--plot-points-tsv",
@@ -274,21 +249,38 @@ def safe_int(value):
     return int(value)
 
 
-def maf_bin_start(maf: float, maf_threshold: float, maf_bin_width: float):
+def maf_bin_start(maf: float, maf_threshold: float):
     if not math.isfinite(maf) or maf < maf_threshold:
         return None
-    raw_idx = int((maf - maf_threshold) / maf_bin_width)
-    bin_start = maf_threshold + raw_idx * maf_bin_width
-    max_start = max(maf_threshold, 0.5 - maf_bin_width)
-    return min(bin_start, max_start)
+    if maf < SPLIT_BIN_TRANSITION:
+        bw = SPLIT_BIN_LOW_WIDTH
+        raw_idx = int((maf - maf_threshold) / bw)
+        return maf_threshold + raw_idx * bw
+    else:
+        bw = SPLIT_BIN_HIGH_WIDTH
+        raw_idx = int((maf - SPLIT_BIN_TRANSITION) / bw)
+        bin_start = SPLIT_BIN_TRANSITION + raw_idx * bw
+        max_start = max(SPLIT_BIN_TRANSITION, 0.5 - bw)
+        return min(bin_start, max_start)
 
 
-def maf_bin_id(bin_start: float, maf_bin_width: float):
-    bin_end = min(bin_start + maf_bin_width, 0.5)
+def _split_bin_width_for_start(bin_start: float) -> float:
+    """Return the bin width for a given bin_start in split-bin mode."""
+    if bin_start < SPLIT_BIN_TRANSITION:
+        return SPLIT_BIN_LOW_WIDTH
+    return SPLIT_BIN_HIGH_WIDTH
+
+
+def maf_bin_id(bin_start: float):
+    bw = _split_bin_width_for_start(bin_start)
+    if bin_start < SPLIT_BIN_TRANSITION:
+        bin_end = min(bin_start + bw, SPLIT_BIN_TRANSITION)
+    else:
+        bin_end = min(bin_start + bw, 0.5)
     return f"[{bin_start:.2f},{bin_end:.2f})"
 
 
-def first_pass(files, maf_threshold: float, maf_bin_width: float, exclude_regions: dict):
+def first_pass(files, maf_threshold: float, exclude_regions: dict):
     bin_accumulators = {}
     common_variant_count = 0
     chrom_max_pos = {}
@@ -332,7 +324,7 @@ def first_pass(files, maf_threshold: float, maf_bin_width: float, exclude_region
             common_variant_count += common_rsds.size
 
             for rsds_value, maf_value in zip(common_rsds, common_maf):
-                bin_start = maf_bin_start(float(maf_value), maf_threshold, maf_bin_width)
+                bin_start = maf_bin_start(float(maf_value), maf_threshold)
                 if bin_start is None:
                     continue
                 acc = bin_accumulators.setdefault(bin_start, [0.0, 0.0, 0])
@@ -353,12 +345,13 @@ def first_pass(files, maf_threshold: float, maf_bin_width: float, exclude_region
         sd_common = math.sqrt(variance_common)
         if not math.isfinite(sd_common) or sd_common <= 0.0:
             raise SystemExit(
-                f"Common-variant SDS standard deviation is zero or non-finite in MAF bin {maf_bin_id(bin_start, maf_bin_width)}"
+                f"Common-variant SDS standard deviation is zero or non-finite in MAF bin {maf_bin_id(bin_start)}"
             )
+        effective_bw = _split_bin_width_for_start(bin_start)
         bin_stats[bin_start] = BinStats(
-            bin_id=maf_bin_id(bin_start, maf_bin_width),
+            bin_id=maf_bin_id(bin_start),
             maf_start=bin_start,
-            maf_end=min(bin_start + maf_bin_width, 0.5),
+            maf_end=min(bin_start + effective_bw, 0.5),
             mean_common=mean_common,
             sd_common=sd_common,
             common_variant_count=count,
@@ -389,7 +382,6 @@ def second_pass(
     files,
     output_prefix: Path,
     maf_threshold: float,
-    maf_bin_width: float,
     bin_stats: dict,
     bonferroni_threshold: float,
     chrom_offsets,
@@ -478,7 +470,7 @@ def second_pass(
                 bin_means = np.full(rows, np.nan, dtype=np.float64)
                 bin_sds = np.full(rows, np.nan, dtype=np.float64)
                 for i in range(rows):
-                    bin_start = maf_bin_start(float(maf[i]), maf_threshold, maf_bin_width)
+                    bin_start = maf_bin_start(float(maf[i]), maf_threshold)
                     if bin_start is None:
                         continue
                     stats = bin_stats.get(bin_start)
@@ -654,43 +646,6 @@ def second_pass(
     return normalized_tsv, stats_tsv, plot_tsv, regions_tsv, plot_point_count, plot_max_neg_log10_p
 
 
-def plot_chunk(ax, x, y, chr_idx, is_significant):
-    odd_mask = (~is_significant) & ((chr_idx % 2) == 1)
-    even_mask = (~is_significant) & ((chr_idx % 2) == 0)
-    sig_mask = is_significant
-
-    if np.any(odd_mask):
-        ax.scatter(
-            x[odd_mask],
-            y[odd_mask],
-            s=1.0,
-            c="#4e79a7",
-            marker=".",
-            linewidths=0,
-            alpha=0.7,
-        )
-    if np.any(even_mask):
-        ax.scatter(
-            x[even_mask],
-            y[even_mask],
-            s=1.0,
-            c="#9c755f",
-            marker=".",
-            linewidths=0,
-            alpha=0.7,
-        )
-    if np.any(sig_mask):
-        ax.scatter(
-            x[sig_mask],
-            y[sig_mask],
-            s=2.0,
-            c="#d62728",
-            marker=".",
-            linewidths=0,
-            alpha=0.9,
-        )
-
-
 def summarize_plot_tsv(plot_tsv: Path):
     plot_point_count = 0
     plot_max_neg_log10_p = 0.0
@@ -730,85 +685,10 @@ def summarize_plot_tsv(plot_tsv: Path):
     )
 
 
-def write_manhattan_plot(
-    output_prefix: Path,
-    plot_tsv: Path,
-    chrom_centers,
-    bonferroni_threshold: float,
-    pop: str,
-    plot_width: int,
-    plot_height: int,
-    plot_chunk_size: int,
-    genome_size: int,
-    plot_max_neg_log10_p: float,
-):
-    plot_png = output_prefix.with_name(output_prefix.name + ".manhattan.png")
-    threshold_y = -math.log10(max(bonferroni_threshold, 1e-300)) if bonferroni_threshold > 0.0 else 0.0
-    x_padding = max(genome_size * 0.01, 1.0)
-
-    fig, ax = plt.subplots(figsize=(plot_width / 100.0, plot_height / 100.0), dpi=100)
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
-    ax.set_title(f"{pop} common-variant standardized SDS Manhattan plot")
-    ax.set_xlabel("Chromosome")
-    ax.set_ylabel("-log10(p_bothside)")
-    ax.grid(axis="y", color="#dddddd", linewidth=0.8)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.tick_params(direction="out")
-    ax.set_xticks([center for _, center in chrom_centers])
-    ax.set_xticklabels([f"chr{chrom}" for chrom, _ in chrom_centers], rotation=0)
-    ax.axhline(threshold_y, color="#d62728", linewidth=1.0)
-
-    with plot_tsv.open("r", newline="") as handle:
-        reader = csv.reader(handle, delimiter="\t")
-        next(reader, None)
-
-        x_buffer = []
-        y_buffer = []
-        chr_buffer = []
-        sig_buffer = []
-
-        def flush():
-            if not x_buffer:
-                return
-            x = np.asarray(x_buffer, dtype=np.float32)
-            y = np.asarray(y_buffer, dtype=np.float32)
-            chr_idx = np.asarray(chr_buffer, dtype=np.int16)
-            is_significant = np.asarray(sig_buffer, dtype=bool)
-            plot_chunk(ax, x, y, chr_idx, is_significant)
-            x_buffer.clear()
-            y_buffer.clear()
-            chr_buffer.clear()
-            sig_buffer.clear()
-
-        for row in reader:
-            x_buffer.append(float(row[0]))
-            y_buffer.append(float(row[1]))
-            chr_buffer.append(int(row[2]))
-            sig_buffer.append(row[3] == "1")
-            if len(x_buffer) >= plot_chunk_size:
-                flush()
-
-        flush()
-
-    ax.set_xlim(-x_padding, max(genome_size, 1) + x_padding)
-    y_upper = max(plot_max_neg_log10_p, threshold_y, 1.0) * 1.05
-    ax.set_ylim(0, y_upper)
-    fig.subplots_adjust(left=0.05, right=0.995, bottom=0.12, top=0.93)
-    fig.savefig(plot_png, dpi=100)
-    plt.close(fig)
-    return plot_png
-
-
 def main():
     args = parse_args()
     if not (0.0 < args.maf_threshold < 0.5):
         raise SystemExit("--maf-threshold must be between 0 and 0.5")
-    if not (0.0 < args.maf_bin_width <= 0.5 - args.maf_threshold):
-        raise SystemExit("--maf-bin-width must be positive and leave room above --maf-threshold")
-    if args.plot_chunk_size <= 0:
-        raise SystemExit("--plot-chunk-size must be positive")
     if args.plot_p_threshold is not None and not (0.0 < args.plot_p_threshold <= 1.0):
         raise SystemExit("--plot-p-threshold must be between 0 and 1")
     if args.plot_points_tsv and args.exclude_regions_tsv:
@@ -848,7 +728,7 @@ def main():
         files = discover_input_files(input_dir)
         if not files:
             raise SystemExit(f"No chr*_p/q.sds.tsv files found under {input_dir}")
-        stats = first_pass(files, args.maf_threshold, args.maf_bin_width, exclude_regions)
+        stats = first_pass(files, args.maf_threshold, exclude_regions)
         bonferroni_threshold = 0.05 / stats.common_variant_count
         offsets, chrom_centers, genome_size = chromosome_offsets(stats.chrom_max_pos)
         (
@@ -862,7 +742,6 @@ def main():
             files=files,
             output_prefix=output_prefix,
             maf_threshold=args.maf_threshold,
-            maf_bin_width=args.maf_bin_width,
             bin_stats=stats.bin_stats,
             bonferroni_threshold=bonferroni_threshold,
             chrom_offsets=offsets,
@@ -870,18 +749,7 @@ def main():
             plot_p_threshold=args.plot_p_threshold,
             exclude_regions=exclude_regions,
         )
-    plot_path = write_manhattan_plot(
-        output_prefix=output_prefix,
-        plot_tsv=plot_tsv,
-        chrom_centers=chrom_centers,
-        bonferroni_threshold=bonferroni_threshold,
-        pop=args.pop,
-        plot_width=args.plot_width,
-        plot_height=args.plot_height,
-        plot_chunk_size=args.plot_chunk_size,
-        genome_size=genome_size,
-        plot_max_neg_log10_p=plot_max_neg_log10_p,
-    )
+    plot_path = None
 
     summary_path = output_prefix.with_name(output_prefix.name + ".postprocess_summary.tsv")
     with summary_path.open("w", newline="") as handle:
@@ -894,7 +762,10 @@ def main():
         writer.writerow(["total_snvs", "" if stats is None else stats.total_snvs])
         writer.writerow(["common_variant_count", "" if stats is None else stats.common_variant_count])
         writer.writerow(["maf_threshold", f"{args.maf_threshold:.10g}"])
-        writer.writerow(["maf_bin_width", f"{args.maf_bin_width:.10g}"])
+        writer.writerow(["bin_mode", "split"])
+        writer.writerow(["split_bin_low_width", f"{SPLIT_BIN_LOW_WIDTH:.10g}"])
+        writer.writerow(["split_bin_high_width", f"{SPLIT_BIN_HIGH_WIDTH:.10g}"])
+        writer.writerow(["split_bin_transition", f"{SPLIT_BIN_TRANSITION:.10g}"])
         writer.writerow(["plot_daf_min", f"{args.maf_threshold:.10g}"])
         writer.writerow(["plot_daf_max", f"{1.0 - args.maf_threshold:.10g}"])
         writer.writerow(["plot_maf_threshold", f"{args.maf_threshold:.10g}"])
@@ -914,8 +785,8 @@ def main():
         writer.writerow(["regions_tsv", "" if regions_tsv is None else str(regions_tsv)])
         writer.writerow(["plot_points_tsv", str(plot_tsv)])
         writer.writerow(["plot_points_written", plot_point_count])
-        writer.writerow(["manhattan_plot", str(plot_path)])
-        writer.writerow(["plot_backend", "matplotlib"])
+        writer.writerow(["manhattan_plot", "" if plot_path is None else str(plot_path)])
+        writer.writerow(["plot_backend", "none"])
         writer.writerow(
             [
                 "summary_warning",
@@ -936,7 +807,7 @@ def main():
     print(f"frequency_bins_tsv\t{'' if stats_tsv is None else stats_tsv}")
     print(f"regions_tsv\t{'' if regions_tsv is None else regions_tsv}")
     print(f"plot_points_tsv\t{plot_tsv}")
-    print(f"manhattan_plot\t{plot_path}")
+    print(f"manhattan_plot\t{'' if plot_path is None else plot_path}")
     print(f"exclude_regions_tsv\t{'' if exclude_regions_tsv is None else exclude_regions_tsv}")
     print(f"summary_tsv\t{summary_path}")
 

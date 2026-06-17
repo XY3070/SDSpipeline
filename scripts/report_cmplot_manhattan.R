@@ -13,7 +13,7 @@ parse_args <- function(args) {
     dpi = 400,
     "point-cex" = 0.28,
     "maf-threshold" = 0.01,
-    "plot-p-threshold" = 0.0005
+    "plot-p-threshold" = 1
   )
 
   i <- 1
@@ -178,22 +178,12 @@ plot_cmplot_manhattan <- function(plot_df, threshold, output_prefix, title, widt
   }
 
   png_path <- sprintf("%s.png", output_prefix)
-  pdf_path <- sprintf("%s.pdf", output_prefix)
 
   render_once(function() {
     png(png_path, width = width, height = height, units = "in", res = dpi, bg = "white")
   })
-  render_once(function() {
-    cairo_pdf(
-      pdf_path,
-      width = width,
-      height = height,
-      bg = "white",
-      fallback_resolution = dpi
-    )
-  })
 
-  invisible(list(png = png_path, pdf = pdf_path))
+  invisible(list(png = png_path))
 }
 
 main <- function() {
@@ -278,7 +268,6 @@ main <- function() {
   cat(sprintf("plot_p_threshold\t%.10g\n", plot_p_threshold))
   cat(sprintf("bonferroni_threshold\t%.10g\n", bonferroni_threshold))
   cat(sprintf("png\t%s\n", outputs$png))
-  cat(sprintf("pdf\t%s\n", outputs$pdf))
 }
 
 main()
