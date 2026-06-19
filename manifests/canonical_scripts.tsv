@@ -50,3 +50,6 @@ benchmark/demography/relate_coal_to_ne.py	demography	active	benchmark/demography
 benchmark/demography/summarize_recent_ne_checkpoints.py	demography	active	benchmark/demography/summarize_recent_ne_checkpoints.py	Checkpoint summary helper
 benchmark/demography/estimate_singer_prior_ne.py	demography	active	benchmark/demography/estimate_singer_prior_ne.py	SINGER prior helper
 benchmark/demography/Population_History_Models.json	demography	active	benchmark/demography/Population_History_Models.json	Demography registry snapshot
+scripts/run_admixture_9k.sh	demography	active	SDSpipeline/scripts/run_admixture_9k.sh	ADAMIXTURE end-to-end driver on 9k Chinese cohort (6 idempotent steps)
+scripts/setup_admixture_env.sh	demography	active	SDSpipeline/scripts/setup_admixture_env.sh	uv-managed bootstrap for ADAMIXTURE Python env
+docs/ADAMIXTURE_9K_PIPELINE.md	demography	active	SDSpipeline/docs/ADAMIXTURE_9K_PIPELINE.md	ADAMIXTURE pipeline user guide

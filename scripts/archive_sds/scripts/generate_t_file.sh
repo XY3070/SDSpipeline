@@ -11,7 +11,7 @@ gawk 'NF > 0 && $1 !~ /^#/ { print $1 }' "$SLIST" > "$CLEAN_SLIST"
 
 TARGET_CHR="${REGION%%:*}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=common_env.sh
+# shellcheck source=/share/home/grp-wangyf/xuyuan/sds/scripts/common_env.sh
 source "$SCRIPT_DIR/common_env.sh"
 ACTUAL_CHR="$(resolve_vcf_chr "$VCF" "$TARGET_CHR")"
 if [[ -z "$ACTUAL_CHR" ]]; then
@@ -25,8 +25,6 @@ RANGE_PART="${REGION#*:}"
 CLEAN_REG="${ACTUAL_CHR}:${RANGE_PART}"
 
 bcftools view -r "$CLEAN_REG" -S "$CLEAN_SLIST" -f PASS -m2 -M2 -v snps --force-samples -Ou "$VCF" | \
-bcftools +fill-tags -Ou -- -t AF,F_MISSING,HWE | \
-bcftools view -i 'AF>=0.05 && AF<=0.95 && F_MISSING<=0.05 && HWE>=1e-6' -Ou | \
 bcftools query -f '%ID\t%REF\t%ALT\t%POS[\t%GT]\n' | \
 gawk -v OFS="\t" '
 {

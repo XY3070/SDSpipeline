@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/common_env.sh"
+activate_sds_env
+
+G_FILE="$BASE_DIR/g_file.txt"
+INPUT_DIR="$BASE_DIR/data/processed/sds_input/legacy_0506"
+OUT_DIR="$BASE_DIR/tmp/chr1_legacy0506_q_20260506"
+LOG_DIR="$OUT_DIR/logs"
+CACHE_DIR="$OUT_DIR/cache"
+INIT="0.00001"
+S_FILE_NCOL="20000"
+PYTHON_BIN="$SDS_ENV_PREFIX/bin/python"
+
+mkdir -p "$OUT_DIR" "$LOG_DIR" "$CACHE_DIR"
+
+S_FILE="$INPUT_DIR/chr1_s_file.txt"
+T_FILE="$INPUT_DIR/chr1_t_file.txt"
+O_FILE="$INPUT_DIR/chr1_o_file.txt"
+B_FILE="$INPUT_DIR/chr1_b_file.txt"
+
+[[ -s "$S_FILE" ]] || { echo "[Error] Missing s_file: $S_FILE" >&2; exit 1; }
+[[ -s "$T_FILE" ]] || { echo "[Error] Missing t_file: $T_FILE" >&2; exit 1; }
+[[ -s "$O_FILE" ]] || { echo "[Error] Missing o_file: $O_FILE" >&2; exit 1; }
+[[ -s "$B_FILE" ]] || { echo "[Error] Missing b_file: $B_FILE" >&2; exit 1; }
+[[ -s "$G_FILE" ]] || { echo "[Error] Missing g_file: $G_FILE" >&2; exit 1; }
+
+read -r _P_START _P_END < <(sed -n '1p' "$B_FILE")
+read -r Q_START Q_END < <(sed -n '2p' "$B_FILE")
+
+Q_T="$OUT_DIR/chr1_q.t.feather"
+Q_OUT="$OUT_DIR/chr1_q.sds.tsv"
+Q_PARQUET="$OUT_DIR/chr1_q.sds.parquet"
+Q_SUMMARY="$LOG_DIR/chr1_q.compute.csv"
+ARCHIVE_SUMMARY="$LOG_DIR/chr1_q.archive.csv"
+
+"$PYTHON_BIN" "$SCRIPT_DIR/filter_t_to_feather.py" \
+    "$T_FILE" "$Q_T" \
+    --start "$Q_START" \
+    --end "$Q_END" \
+    --summary-csv "$Q_SUMMARY"
+
+bash "$SCRIPT_DIR/run_sds_compute_chunk.sh" \
+    "$Q_T" "$Q_OUT" "$S_FILE" "$O_FILE" "$B_FILE" "$G_FILE" "$INIT" "$S_FILE_NCOL" "$Q_PARQUET" "$Q_SUMMARY" "$CACHE_DIR"
+
+"$PYTHON_BIN" "$SCRIPT_DIR/archive_sds_output.py" \
+    "$Q_OUT" \
+    "$Q_PARQUET" \
+    --summary-csv "$ARCHIVE_SUMMARY"
+
+echo "legacy0506_q_output=$Q_OUT"
