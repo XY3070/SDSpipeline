@@ -3,15 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/common_env.sh"
+activate_sds_env
 
-SDS_PYTHON="/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python"
 SUBMIT_CHUNKED="$SCRIPT_DIR/submit_sds_compute_chunked_chr.sh"
 POSTPROCESS="$SCRIPT_DIR/postprocess_sds_results.py"
 DIAGNOSE="$SCRIPT_DIR/diagnose_sds_scan.py"
 
 POP="${1:-NCN}"
-INPUT_ROOT="${2:-$BASE_DIR/data/processed/sds_input_rebuilt_main_contract_20260511}"
-OUTPUT_ROOT="${3:-$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_grid001_ncn_$(date +%Y%m%d_%H%M%S)}"
+INPUT_ROOT="${2:-$SDS_DATA_PROCESSED_ROOT/sds_input_rebuilt_main_contract_20260511}"
+OUTPUT_ROOT="${3:-$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_grid001_ncn_$(date +%Y%m%d_%H%M%S)}"
 G_FILE="${4:-}"
 QUEUE="${5:-normal}"
 

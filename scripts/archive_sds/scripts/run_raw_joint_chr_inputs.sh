@@ -8,7 +8,7 @@ activate_sds_env
 
 CHR=""
 RAW_VCF=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_INPUT_ROOT"
 TEST_MODE=0
 FORCE=0
 EMIT_AUDIT_SIDECARS=1

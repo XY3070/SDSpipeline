@@ -8,8 +8,8 @@ activate_sds_env
 
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_output"
-IN_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_OUTPUT_ROOT"
+IN_ROOT="$SDS_SDS_INPUT_ROOT"
 QUEUE="normal"
 CHUNK_ROWS="5000"
 ARRAY_PARALLEL="64"

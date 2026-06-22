@@ -2,11 +2,15 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../scripts/common_env.sh
+source "$SCRIPT_DIR/../scripts/common_env.sh"
+
 # ========= Customer config =========
-VCF_DIR="/share/home/grp-wangyf/xuyuan/sds/plink/smc_vcfs"
+VCF_DIR="${SDS_VCF_ROOT:-$SDS_INPUT_ROOT/raw/vcf}"
 VCF_PREFIX="UKBQC.for_smc"
-SAMPLE_LIST="/share/home/grp-wangyf/xuyuan/sds/plink/final_samples_to_keep.list"
-OUTDIR="/share/home/grp-wangyf/xuyuan/sds/data/processed/sds_input"
+SAMPLE_LIST="${SDS_SAMPLE_LIST_ROOT:-$SDS_INPUT_ROOT/freeze/sample_lists}/final_samples_to_keep.list"
+OUTDIR="${SDS_SDS_INPUT_ROOT:-$SDS_RESULTS_ROOT/production/sds_input}"
 LOGDIR="$OUTDIR/logs"
 
 SPATIAL_WINDOW=1000
@@ -58,7 +62,6 @@ if [[ -f ~/.bashrc ]]; then
     mamba activate SDS 2>/dev/null || true
 fi
 
-SCRIPT_DIR="/share/home/grp-wangyf/xuyuan/sds/scripts"
 cd "$SCRIPT_DIR"
 
 # ========= Simplified environment check =========

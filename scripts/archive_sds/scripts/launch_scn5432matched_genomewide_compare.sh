@@ -5,9 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SDS_PYTHON="/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python"
 
-OLD_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_newinput_20260511/SCN"
-NEW_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526/SCN"
-OUT_DIR="$BASE_DIR/data/processed/scn5432matched_genomewide_compare_20260526"
+OLD_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_newinput_20260511/SCN"
+NEW_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526/SCN"
+OUT_DIR="$SDS_DATA_PROCESSED_ROOT/scn5432matched_genomewide_compare_20260526"
 
 mkdir -p "$OUT_DIR"
 

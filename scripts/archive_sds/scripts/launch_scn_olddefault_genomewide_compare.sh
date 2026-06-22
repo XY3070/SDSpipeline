@@ -5,10 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SDS_PYTHON="/data/home/grp-wangyf/intern/miniforge3/envs/sds/bin/python"
 
-OLD_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_newinput_20260511/SCN"
-MATCHED_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526/SCN"
-OLDDEFAULT_ROOT="$BASE_DIR/data/processed/sds_output_scn_olddefault_genomewide_20260527/SCN"
-OUT_DIR="$BASE_DIR/data/processed/scn_olddefault_genomewide_compare_20260528"
+OLD_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_newinput_20260511/SCN"
+MATCHED_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526/SCN"
+OLDDEFAULT_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_scn_olddefault_genomewide_20260527/SCN"
+OUT_DIR="$SDS_DATA_PROCESSED_ROOT/scn_olddefault_genomewide_compare_20260528"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in

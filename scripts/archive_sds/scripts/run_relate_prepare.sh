@@ -10,7 +10,7 @@ activate_relate_runtime
 
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/relate_clues2"
+OUT_ROOT="$SDS_RELATE_OUTPUT_ROOT"
 FORCE=0
 ANCESTOR_PATH=""
 MASK_PATH=""

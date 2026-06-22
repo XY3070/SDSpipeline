@@ -63,8 +63,8 @@ class RegionSummary:
 @dataclass(frozen=True)
 class BinStats:
     bin_id: str
-    maf_start: float
-    maf_end: float
+    af_start: float
+    af_end: float
     mean_common: float
     sd_common: float
     common_variant_count: int
@@ -158,6 +158,16 @@ def parse_args():
         help=(
             "Optional TSV of regions to exclude before normalization and plotting. "
             "Expected columns: chrom start end."
+        ),
+    )
+    parser.add_argument(
+        "--bin-mode",
+        choices=["maf", "daf"],
+        default="maf",
+        help=(
+            "Binning mode for normalization. 'maf' uses minor allele frequency "
+            "(default, symmetric). 'daf' uses derived allele frequency "
+            "(directional, supports asymmetric bin widths)."
         ),
     )
     return parser.parse_args()
@@ -280,7 +290,37 @@ def maf_bin_id(bin_start: float):
     return f"[{bin_start:.2f},{bin_end:.2f})"
 
 
-def first_pass(files, maf_threshold: float, exclude_regions: dict):
+DAF_FINE_WIDTH = 0.005
+DAF_COARSE_WIDTH = 0.01
+DAF_FINE_THRESHOLD = 0.1
+
+
+def daf_bin_start(daf: float) -> float | None:
+    if not math.isfinite(daf) or daf < 0.0 or daf >= 1.0:
+        return None
+    if daf < DAF_FINE_THRESHOLD:
+        return round(int(daf / DAF_FINE_WIDTH) * DAF_FINE_WIDTH, 6)
+    elif daf < (1.0 - DAF_FINE_THRESHOLD):
+        offset = daf - DAF_FINE_THRESHOLD
+        return round(DAF_FINE_THRESHOLD + int(offset / DAF_COARSE_WIDTH) * DAF_COARSE_WIDTH, 6)
+    else:
+        offset = daf - (1.0 - DAF_FINE_THRESHOLD)
+        return round((1.0 - DAF_FINE_THRESHOLD) + int(offset / DAF_FINE_WIDTH) * DAF_FINE_WIDTH, 6)
+
+
+def daf_bin_width(bin_start: float) -> float:
+    if bin_start < DAF_FINE_THRESHOLD - 1e-12 or bin_start >= (1.0 - DAF_FINE_THRESHOLD) - 1e-12:
+        return DAF_FINE_WIDTH
+    return DAF_COARSE_WIDTH
+
+
+def daf_bin_id(bin_start: float) -> str:
+    bw = daf_bin_width(bin_start)
+    bin_end = round(bin_start + bw, 6)
+    return f"[{bin_start:.3f},{bin_end:.3f})"
+
+
+def first_pass(files, maf_threshold: float, exclude_regions: dict, bin_mode: str = "maf"):
     bin_accumulators = {}
     common_variant_count = 0
     chrom_max_pos = {}
@@ -323,14 +363,25 @@ def first_pass(files, maf_threshold: float, exclude_regions: dict):
             common_maf = maf[common_mask]
             common_variant_count += common_rsds.size
 
-            for rsds_value, maf_value in zip(common_rsds, common_maf):
-                bin_start = maf_bin_start(float(maf_value), maf_threshold)
-                if bin_start is None:
-                    continue
-                acc = bin_accumulators.setdefault(bin_start, [0.0, 0.0, 0])
-                acc[0] += float(rsds_value)
-                acc[1] += float(rsds_value * rsds_value)
-                acc[2] += 1
+            if bin_mode == "daf":
+                common_daf = daf[valid_common][common_mask]
+                for rsds_value, daf_value in zip(common_rsds, common_daf):
+                    bin_start = daf_bin_start(float(daf_value))
+                    if bin_start is None:
+                        continue
+                    acc = bin_accumulators.setdefault(bin_start, [0.0, 0.0, 0])
+                    acc[0] += float(rsds_value)
+                    acc[1] += float(rsds_value * rsds_value)
+                    acc[2] += 1
+            else:
+                for rsds_value, maf_value in zip(common_rsds, common_maf):
+                    bin_start = maf_bin_start(float(maf_value), maf_threshold)
+                    if bin_start is None:
+                        continue
+                    acc = bin_accumulators.setdefault(bin_start, [0.0, 0.0, 0])
+                    acc[0] += float(rsds_value)
+                    acc[1] += float(rsds_value * rsds_value)
+                    acc[2] += 1
 
     if total_snvs == 0:
         raise SystemExit("No valid SNP rows were found in the input files")
@@ -347,11 +398,13 @@ def first_pass(files, maf_threshold: float, exclude_regions: dict):
             raise SystemExit(
                 f"Common-variant SDS standard deviation is zero or non-finite in MAF bin {maf_bin_id(bin_start)}"
             )
-        effective_bw = _split_bin_width_for_start(bin_start)
+        effective_bw = daf_bin_width(bin_start) if bin_mode == "daf" else _split_bin_width_for_start(bin_start)
+        bid = daf_bin_id(bin_start) if bin_mode == "daf" else maf_bin_id(bin_start)
+        af_end = round(bin_start + effective_bw, 6) if bin_mode == "daf" else min(bin_start + effective_bw, 0.5)
         bin_stats[bin_start] = BinStats(
-            bin_id=maf_bin_id(bin_start),
-            maf_start=bin_start,
-            maf_end=min(bin_start + effective_bw, 0.5),
+            bin_id=bid,
+            af_start=bin_start,
+            af_end=af_end,
             mean_common=mean_common,
             sd_common=sd_common,
             common_variant_count=count,
@@ -388,6 +441,7 @@ def second_pass(
     region_gap: int,
     plot_p_threshold: float | None,
     exclude_regions: dict,
+    bin_mode: str = "maf",
 ):
     normalized_tsv = output_prefix.with_name(output_prefix.name + ".normalized.tsv")
     stats_tsv = output_prefix.with_name(output_prefix.name + ".frequency_bins.tsv")
@@ -470,7 +524,10 @@ def second_pass(
                 bin_means = np.full(rows, np.nan, dtype=np.float64)
                 bin_sds = np.full(rows, np.nan, dtype=np.float64)
                 for i in range(rows):
-                    bin_start = maf_bin_start(float(maf[i]), maf_threshold)
+                    if bin_mode == "daf":
+                        bin_start = daf_bin_start(float(daf[i]))
+                    else:
+                        bin_start = maf_bin_start(float(maf[i]), maf_threshold)
                     if bin_start is None:
                         continue
                     stats = bin_stats.get(bin_start)
@@ -574,8 +631,8 @@ def second_pass(
         writer.writerow(
             [
                 "bin_id",
-                "maf_start",
-                "maf_end",
+                "af_start",
+                "af_end",
                 "common_variant_count",
                 "common_variant_mean",
                 "common_variant_sd",
@@ -586,8 +643,8 @@ def second_pass(
             writer.writerow(
                 [
                     stats.bin_id,
-                    f"{stats.maf_start:.10g}",
-                    f"{stats.maf_end:.10g}",
+                    f"{stats.af_start:.10g}",
+                    f"{stats.af_end:.10g}",
                     stats.common_variant_count,
                     f"{stats.mean_common:.10g}",
                     f"{stats.sd_common:.10g}",
@@ -728,7 +785,7 @@ def main():
         files = discover_input_files(input_dir)
         if not files:
             raise SystemExit(f"No chr*_p/q.sds.tsv files found under {input_dir}")
-        stats = first_pass(files, args.maf_threshold, exclude_regions)
+        stats = first_pass(files, args.maf_threshold, exclude_regions, bin_mode=args.bin_mode)
         bonferroni_threshold = 0.05 / stats.common_variant_count
         offsets, chrom_centers, genome_size = chromosome_offsets(stats.chrom_max_pos)
         (
@@ -748,6 +805,7 @@ def main():
             region_gap=args.region_gap,
             plot_p_threshold=args.plot_p_threshold,
             exclude_regions=exclude_regions,
+            bin_mode=args.bin_mode,
         )
     plot_path = None
 
@@ -762,7 +820,7 @@ def main():
         writer.writerow(["total_snvs", "" if stats is None else stats.total_snvs])
         writer.writerow(["common_variant_count", "" if stats is None else stats.common_variant_count])
         writer.writerow(["maf_threshold", f"{args.maf_threshold:.10g}"])
-        writer.writerow(["bin_mode", "split"])
+        writer.writerow(["bin_mode", args.bin_mode])
         writer.writerow(["split_bin_low_width", f"{SPLIT_BIN_LOW_WIDTH:.10g}"])
         writer.writerow(["split_bin_high_width", f"{SPLIT_BIN_HIGH_WIDTH:.10g}"])
         writer.writerow(["split_bin_transition", f"{SPLIT_BIN_TRANSITION:.10g}"])

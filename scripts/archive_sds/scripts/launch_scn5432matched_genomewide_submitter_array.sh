@@ -4,9 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-OUT_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526"
-IN_ROOT="$BASE_DIR/data/processed/sds_input_rebuilt_main_contract_20260511"
-G_FILE="$BASE_DIR/tmp/gravel_chb_ne100k_scn5432_smokegrid_20260526/gravel_chb_present100000.g_file.txt"
+OUT_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_scn5432matched_genomewide_run2_20260526"
+IN_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_input_rebuilt_main_contract_20260511"
+G_FILE="$SDS_TMP_ROOT/gravel_chb_ne100k_scn5432_smokegrid_20260526/gravel_chb_present100000.g_file.txt"
 CHR_SPEC="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22"
 
 while [[ $# -gt 0 ]]; do
@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 TS="$(date +%Y%m%d_%H%M%S)_$$"
-STATE_DIR="$BASE_DIR/data/processed/scn5432matched_submitter_array_$TS"
+STATE_DIR="$SDS_RUNS_ROOT/scn5432matched_submitter_array_$TS"
 CHR_LIST="$STATE_DIR/chrs.txt"
 RESULT_DIR="$STATE_DIR/results"
 MANIFEST="$STATE_DIR/manifest.tsv"

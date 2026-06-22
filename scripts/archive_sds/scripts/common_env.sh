@@ -1,9 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-SDS_ENV_PREFIX="/data/home/grp-wangyf/intern/miniforge3/envs/sds"
-MINIFORGE_ROOT="/data/home/grp-wangyf/intern/miniforge3"
-MAMBA_BIN="$MINIFORGE_ROOT/bin/mamba"
+SDS_ENV_PREFIX="${SDS_ENV_PREFIX:-${CONDA_PREFIX:-}}"
+if [[ -z "${MINIFORGE_ROOT:-}" && -n "$SDS_ENV_PREFIX" ]]; then
+    MINIFORGE_ROOT="$(cd "$(dirname "$(dirname "$SDS_ENV_PREFIX")")" && pwd 2>/dev/null || true)"
+fi
+MINIFORGE_ROOT="${MINIFORGE_ROOT:-}"
+MAMBA_BIN="${MAMBA_BIN:-${MINIFORGE_ROOT:+$MINIFORGE_ROOT/bin/mamba}}"
 
 ensure_utf8_locale() {
     if [[ "${LC_ALL:-}" == "C.UTF-8" && ! -d /usr/lib/locale/C.UTF-8 ]]; then
@@ -17,12 +20,12 @@ ensure_utf8_locale() {
 activate_sds_env() {
     ensure_utf8_locale
 
-    if [[ ! -d "$SDS_ENV_PREFIX" ]]; then
+    if [[ -z "$SDS_ENV_PREFIX" || ! -d "$SDS_ENV_PREFIX" ]]; then
         echo "[Error] SDS env not found: $SDS_ENV_PREFIX" >&2
         return 1
     fi
 
-    export PATH="$SDS_ENV_PREFIX/bin:$MINIFORGE_ROOT/bin:$PATH"
+    export PATH="$SDS_ENV_PREFIX/bin${MINIFORGE_ROOT:+:$MINIFORGE_ROOT/bin}:$PATH"
     hash -r
 
     if [[ ! -x "$SDS_ENV_PREFIX/bin/python" ]]; then
@@ -35,13 +38,13 @@ activate_relate_runtime() {
     activate_sds_env
 
     # Relate binaries require a newer libstdc++ than the system default.
-    export LD_LIBRARY_PATH="$SDS_ENV_PREFIX/lib:$MINIFORGE_ROOT/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="$SDS_ENV_PREFIX/lib${MINIFORGE_ROOT:+:$MINIFORGE_ROOT/lib}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 }
 
 mamba_run_in_sds_env() {
     activate_sds_env
 
-    if [[ -x "$MAMBA_BIN" ]]; then
+    if [[ -n "$MAMBA_BIN" && -x "$MAMBA_BIN" ]]; then
         "$MAMBA_BIN" run -p "$SDS_ENV_PREFIX" "$@"
         return $?
     fi

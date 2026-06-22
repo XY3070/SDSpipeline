@@ -10,8 +10,8 @@ PYTHON_BIN="$SDS_ENV_PREFIX/bin/python"
 
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_output"
-IN_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_OUTPUT_ROOT"
+IN_ROOT="$SDS_SDS_INPUT_ROOT"
 VCF_OVERRIDE=""
 TEST_MODE=false
 FORCE=0
@@ -196,7 +196,7 @@ if [[ "$FORCE" -eq 0 && -f "$FINAL_OUT" ]]; then
     exit 0
 fi
 
-echo ">>> SDS env: /data/home/grp-wangyf/intern/miniforge3/envs/sds"
+echo ">>> SDS env: ${SDS_ENV_PREFIX:-${CONDA_PREFIX:-unknown}}"
 echo ">>> Compute population: $POP | Chromosome: $CHR"
 echo ">>> Input dir: $INDIR"
 echo ">>> g_file: $G_FILE"

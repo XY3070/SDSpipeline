@@ -3,15 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/common_env.sh"
+activate_sds_env
 
 POP=""
 CHR=""
 ARRAY_QUEUE="normal"
 SUBMITTER_QUEUE="smp"
 SUBMITTER_SLOTS="4"
-IN_ROOT="$BASE_DIR/data/processed/sds_input_rebuilt_main_contract_20260511"
-OUT_ROOT="$BASE_DIR/data/processed/sds_output_gravel_chb_ne100k_newinput_20260511"
-G_FILE="$BASE_DIR/tmp/gravel_chb_gamma_ne100k_20260502/gravel_chb_present100000.g_file.txt"
+IN_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_input_rebuilt_main_contract_20260511"
+OUT_ROOT="$SDS_DATA_PROCESSED_ROOT/sds_output_gravel_chb_ne100k_newinput_20260511"
+G_FILE="$SDS_TMP_ROOT/gravel_chb_gamma_ne100k_20260502/gravel_chb_present100000.g_file.txt"
 JOB_GROUP="via_smp"
 
 while [[ $# -gt 0 ]]; do

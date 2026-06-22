@@ -61,7 +61,7 @@ write_input_audit_sidecars() {
 # ========= 默认配置 =========
 POP=""
 CHR=""
-OUT_ROOT="$BASE_DIR/data/processed/sds_input"
+OUT_ROOT="$SDS_SDS_INPUT_ROOT"
 VCF_OVERRIDE=""
 SAMPLE_LIST_OVERRIDE=""
 OUT_POP=""
@@ -165,7 +165,7 @@ validate_sample_list_against_vcf() {
     fi
 }
 
-echo ">>> SDS env: /data/home/grp-wangyf/intern/miniforge3/envs/sds"
+echo ">>> SDS env: ${SDS_ENV_PREFIX:-${CONDA_PREFIX:-unknown}}"
 echo ">>> Population label: $OUT_POP | Chromosome: $CHR"
 echo ">>> VCF: $VCF_FILE"
 echo ">>> Sample list: $SAMPLE_LIST"

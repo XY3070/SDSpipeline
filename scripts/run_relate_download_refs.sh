@@ -7,7 +7,7 @@ BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/common_env.sh"
 activate_sds_env
 
-OUT_ROOT="${SDS_RELATE_OUTPUT_ROOT:-$BASE_DIR/data/processed/relate_clues2}"
+OUT_ROOT="${SDS_RELATE_OUTPUT_ROOT:-$SDS_RESULTS_ROOT/legacy/relate_clues2}"
 FORCE=0
 DOWNLOAD_URL="https://zenodo.org/api/records/15801307/files/Relate_input_files.tgz/content"
 

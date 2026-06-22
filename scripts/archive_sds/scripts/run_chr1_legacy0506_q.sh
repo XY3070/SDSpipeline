@@ -7,8 +7,8 @@ source "$SCRIPT_DIR/common_env.sh"
 activate_sds_env
 
 G_FILE="$BASE_DIR/g_file.txt"
-INPUT_DIR="$BASE_DIR/data/processed/sds_input/legacy_0506"
-OUT_DIR="$BASE_DIR/tmp/chr1_legacy0506_q_20260506"
+INPUT_DIR="$SDS_SDS_INPUT_ROOT/legacy_0506"
+OUT_DIR="$SDS_TMP_ROOT/chr1_legacy0506_q_20260506"
 LOG_DIR="$OUT_DIR/logs"
 CACHE_DIR="$OUT_DIR/cache"
 INIT="0.00001"

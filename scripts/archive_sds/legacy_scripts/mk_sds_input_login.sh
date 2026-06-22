@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # ========= Customer configuration ========
-VCF_DIR="/share/home/grp-wangyf/xuyuan/sds/plink/smc_vcfs"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../scripts/common_env.sh
+source "$SCRIPT_DIR/../scripts/common_env.sh"
+
+VCF_DIR="${SDS_VCF_ROOT:-$SDS_INPUT_ROOT/raw/vcf}"
 VCF_PREFIX="UKBQC.for_smc"
-SAMPLE_LIST="/share/home/grp-wangyf/xuyuan/sds/plink/final_samples_to_keep.list"
-OUTDIR="/share/home/grp-wangyf/xuyuan/sds/data/processed/sds_input"
+SAMPLE_LIST="${SDS_SAMPLE_LIST_ROOT:-$SDS_INPUT_ROOT/freeze/sample_lists}/final_samples_to_keep.list"
+OUTDIR="${SDS_SDS_INPUT_ROOT:-$SDS_RESULTS_ROOT/production/sds_input}"
 LOGDIR="$OUTDIR/logs"
-SCRIPT_DIR="/share/home/grp-wangyf/xuyuan/sds/scripts"
 
 # SDS parameters
 SPATIAL_WINDOW=1000

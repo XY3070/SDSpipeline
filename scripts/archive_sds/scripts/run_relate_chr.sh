@@ -13,7 +13,7 @@ CHR=""
 THREADS="${THREADS:-16}"
 NE="${NE:-30000}"
 MU="${MU:-1.25e-8}"
-OUT_ROOT="$BASE_DIR/data/processed/relate_clues2"
+OUT_ROOT="$SDS_RELATE_OUTPUT_ROOT"
 FORCE=0
 MAP_PATH=""
 
