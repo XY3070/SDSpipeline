@@ -6,7 +6,8 @@ OUT_ARM="$3"
 REGION="$4"
 
 mkdir -p "$(dirname "$OUT_ARM")"
-CLEAN_SLIST="$(dirname "$OUT_ARM")/samples.clean.txt"
+OUT_BASENAME="$(basename "$OUT_ARM" .txt)"
+CLEAN_SLIST="$(dirname "$OUT_ARM")/samples.clean.${OUT_BASENAME}.txt"
 gawk 'NF > 0 && $1 !~ /^#/ { print $1 }' "$SLIST" > "$CLEAN_SLIST"
 
 TARGET_CHR="${REGION%%:*}"

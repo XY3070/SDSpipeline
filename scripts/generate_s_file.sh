@@ -8,7 +8,7 @@ REGION="$5"
 
 mkdir -p "$TMPDIR"
 OUT_ARM="$TMPDIR/s_${ARM}.with_names.txt"
-CLEAN_SLIST="$TMPDIR/samples.clean.txt"
+CLEAN_SLIST="$TMPDIR/samples.clean.s_${ARM}.txt"
 MAX_SINGLETON_MISSING_SAMPLES="${MAX_SINGLETON_MISSING_SAMPLES:-10}"
 
 gawk 'NF > 0 && $1 !~ /^#/ { print $1 }' "$SLIST" > "$CLEAN_SLIST"
