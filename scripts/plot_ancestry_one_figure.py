@@ -7,7 +7,7 @@ Sort order (left -> right):
     East  (Shanghai)
     North (Jinan -> JiNing)
     Unknown
-Within each Region block: sort by dominant cluster, then dominant share desc.
+Within each Region block: sort by component-0 proportion (monotonic gradient).
 
 X-axis: one tick per Region, label = "Region (n=...)", placed at the block
 center. Vertical separators between Region blocks.
@@ -111,7 +111,8 @@ def main():
         if reg not in by_reg:
             continue
         idxs = by_reg[reg]
-        idxs.sort(key=lambda i: (int(np.argmax(q[i])), -float(q[i, np.argmax(q[i])])))
+        # Sort by component 0 proportion → monotonic gradient across components
+        idxs.sort(key=lambda i: q[i, 0])
         start = len(ordered_idx)
         ordered_idx.extend(idxs)
         region_blocks.append((reg, len(idxs), start))
@@ -147,8 +148,9 @@ def main():
     ax.set_xlim(-0.5, n_total - 0.5)
     ax.set_ylim(0, 1.02)
     ax.set_xticks(tick_pos)
-    ax.set_xticklabels(tick_lab, fontsize=10, fontweight="bold")
-    ax.tick_params(axis="x", length=6, width=1.2)
+    ax.set_xticklabels(tick_lab, fontsize=9, fontweight="bold",
+                       rotation=45, ha="right", rotation_mode="anchor")
+    ax.tick_params(axis="x", length=6, width=1.2, pad=8)
     ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
     ax.set_yticklabels(["0", "0.25", "0.5", "0.75", "1"], fontsize=9)
     ax.set_ylabel("Ancestry proportion", fontsize=11)

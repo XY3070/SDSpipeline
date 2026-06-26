@@ -11,6 +11,7 @@ Rules:
 - reusable edits happen here first
 - one-off scripts stay in `SDSworkspace/oneoff/`
 - legacy copies under `../sds/scripts` should be treated as transitional once this repo becomes active
+- every script should have a detailed document for manually command implementation, especially the required arguments and default values
 
 Demography support now also lives here:
 
